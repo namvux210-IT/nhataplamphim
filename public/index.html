@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | DUAL ENGINE</title>
+    <title>BLUE-MOVIE | DUAL-API</title>
     <style>
         :root { --main: #00d2ff; --bg: #0a0a0a; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
+        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; }
         .search-box { display: flex; gap: 10px; margin: 20px 5%; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; }
+        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 50px; }
         .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; position: relative; }
         .card:hover { transform: translateY(-5px); border-color: var(--main); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
         .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; }
-        .source-tag { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); font-size: 10px; padding: 2px 6px; border-radius: 4px; color: var(--main); border: 1px solid var(--main); }
+        .source-badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: var(--main); border: 1px solid var(--main); }
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
         .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
@@ -28,19 +28,19 @@
 <body>
     <nav class="nav">
         <a href="/" class="logo">BLUE-MOVIE</a>
-        <div id="engine-status" style="font-size: 12px; color: #00ff00;">● OPhim + KKPhim Active</div>
+        <div style="font-size: 11px; color: #aaa;">Engine: <span style="color:#00ff00">OPhim + KKPhim</span></div>
     </nav>
 
     <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm tên phim (không dấu)..." onkeypress="if(event.key==='Enter') search()">
+        <input type="text" id="k" placeholder="Tìm phim (không dấu)..." onkeypress="if(event.key==='Enter') search()">
         <button onclick="search()">TÌM KIẾM</button>
     </div>
 
     <div id="grid" class="grid"></div>
 
     <div id="player" class="player">
-        <div style="padding: 15px; display: flex; justify-content: space-between; background: #000;">
-            <b id="m-name">...</b>
+        <div style="padding: 15px; display: flex; justify-content: space-between; background: #000; border-bottom: 1px solid #222;">
+            <b id="m-name">Đang tải...</b>
             <b onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG X]</b>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
@@ -48,38 +48,37 @@
     </div>
 
     <script>
-        const PROXY_URL = "/api/proxy?path=";
+        const PROXY = "/api/proxy?path=";
         const IMG_PROXY = "https://images.weserv.nl/?url=";
 
         async function load(path, src = 'ophim') {
             const g = document.getElementById('grid');
-            if(src === 'ophim') g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Đang tìm kiếm...</p>';
-            
+            if (src === 'ophim') g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang tìm kiếm...</p>';
+
             try {
-                const res = await fetch(`${PROXY_URL}${encodeURIComponent(path)}&src=${src}`);
+                const res = await fetch(`${PROXY}${encodeURIComponent(path)}&src=${src}`);
                 const data = await res.json();
                 const items = data.items || (data.data && data.data.items) || [];
-                
+
                 if (items.length === 0) {
-                    if (src === 'ophim') return load(path, 'kkphim'); // Fallback sang KKPhim
-                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim ở cả 2 nguồn.</p>';
+                    if (src === 'ophim') return load(path, 'kkphim'); // Nếu OPhim ko có, nhảy sang KKPhim
+                    if (g.innerHTML.includes('🔍')) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim.</p>';
                     return;
                 }
 
                 const imgBase = (src === 'ophim') ? "https://img.otruyenapi.com/uploads/movies/" : "https://phimimg.com/";
-                
                 const html = items.map(m => {
                     const thumb = m.thumb_url.includes('http') ? m.thumb_url : imgBase + m.thumb_url;
                     return `
                         <div class="card" onclick="view('${m.slug}', '${src}')">
-                            <div class="source-tag">${src.toUpperCase()}</div>
+                            <span class="source-badge">${src.toUpperCase()}</span>
                             <img src="${IMG_PROXY + encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
                             <p class="card-t">${m.name}</p>
                         </div>
                     `;
                 }).join('');
 
-                if(src === 'kkphim' && items.length > 0) g.innerHTML += html;
+                if (src === 'kkphim' && g.innerHTML !== "") g.innerHTML += html;
                 else g.innerHTML = html;
 
             } catch (e) { console.error(e); }
@@ -87,7 +86,7 @@
 
         async function search() {
             const k = document.getElementById('k').value;
-            if(k) {
+            if (k) {
                 document.getElementById('grid').innerHTML = "";
                 load('tim-kiem?keyword=' + encodeURIComponent(k), 'ophim');
             }
@@ -95,7 +94,7 @@
 
         async function view(slug, src) {
             try {
-                const res = await fetch(`${PROXY_URL}${encodeURIComponent('phim/' + slug)}&src=${src}`);
+                const res = await fetch(`${PROXY}${encodeURIComponent('phim/' + slug)}&src=${src}`);
                 const data = await res.json();
                 const movie = data.movie || (data.data && data.data.item);
                 const episodes = data.episodes || (data.data && data.data.item.episodes);
@@ -109,7 +108,7 @@
                     <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
                 `).join('');
                 play(sv[0].link_embed, epDiv.querySelector('.ep'));
-            } catch (e) { alert("Lỗi tải link phim!"); }
+            } catch (e) { alert("Lỗi tải phim!"); }
         }
 
         function play(url, el) {
