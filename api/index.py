@@ -8,24 +8,24 @@ CORS(app)
 @app.route('/api/proxy')
 def proxy():
     path = request.args.get('path', 'danh-sach/phim-moi-cap-nhat')
-    source = request.args.get('src', 'ophim') # Nhận nguồn từ Frontend
-    path = path.lstrip('/')
+    source = request.args.get('src', 'ophim')
+    page = request.args.get('page', '1')
     
-    # Chọn địa chỉ API dựa trên nguồn phim
-    if source == 'kkphim':
-        base_url = "https://phimapi.com"
+    path = path.lstrip('/')
+    # Kết hợp path với page
+    if '?' in path:
+        final_path = f"{path}&page={page}"
     else:
-        # API v1 của OPhim
-        base_url = "https://ophim1.com/api/v1"
-        
-    target_url = f"{base_url}/{path}"
+        final_path = f"{path}?page={page}"
+
+    base_url = "https://phimapi.com" if source == 'kkphim' else "https://ophim1.com/api/v1"
+    target_url = f"{base_url}/{final_path}"
     
     try:
         response = requests.get(target_url, timeout=10)
         data = response.json()
         res = make_response(jsonify(data))
-        # Lưu bộ nhớ đệm 1 giờ để web load nhanh
-        res.headers['Cache-Control'] = 's-maxage=3600, stale-while-revalidate=600'
+        res.headers['Cache-Control'] = 's-maxage=60, stale-while-revalidate=30'
         return res
     except Exception as e:
         return jsonify({"error": str(e)}), 500
