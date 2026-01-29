@@ -3,36 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | DUAL-API</title>
+    <title>BLUE-MOVIE | DUAL-ENGINE</title>
     <style>
         :root { --main: #00d2ff; --bg: #0a0a0a; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; }
+        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
         .search-box { display: flex; gap: 10px; margin: 20px 5%; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
+        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 50px; }
         .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; position: relative; }
         .card:hover { transform: translateY(-5px); border-color: var(--main); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
         .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; }
-        .source-badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: var(--main); border: 1px solid var(--main); }
+        .source-badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; text-shadow: 1px 1px 2px #000; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
         .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
         .ep { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .ep.active { background: var(--main); color: #000; }
+        .ep.active { background: var(--main); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
     <nav class="nav">
         <a href="/" class="logo">BLUE-MOVIE</a>
-        <div style="font-size: 11px; color: #aaa;">Engine: <span style="color:#00ff00">OPhim + KKPhim</span></div>
+        <div style="font-size: 12px; color: #00ff00;">● OPhim + KKPhim Hợp Nhất</div>
     </nav>
 
     <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm phim (không dấu)..." onkeypress="if(event.key==='Enter') search()">
+        <input type="text" id="k" placeholder="Tìm tên phim (không dấu)..." onkeypress="if(event.key==='Enter') search()">
         <button onclick="search()">TÌM KIẾM</button>
     </div>
 
@@ -40,8 +40,8 @@
 
     <div id="player" class="player">
         <div style="padding: 15px; display: flex; justify-content: space-between; background: #000; border-bottom: 1px solid #222;">
-            <b id="m-name">Đang tải...</b>
-            <b onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG X]</b>
+            <b id="m-name">...</b>
+            <b onclick="closePlayer()" style="color:red; cursor:pointer; border: 1px solid red; padding: 2px 10px; border-radius: 4px;">ĐÓNG X</b>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
@@ -53,35 +53,47 @@
 
         async function load(path, src = 'ophim') {
             const g = document.getElementById('grid');
-            if (src === 'ophim') g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang tìm kiếm...</p>';
-
+            
+            // Hiển thị trạng thái khi bắt đầu tìm kiếm
+            if (src === 'ophim') {
+                g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang tổng hợp phim từ OPhim & KKPhim...</p>';
+            }
+            
             try {
                 const res = await fetch(`${PROXY}${encodeURIComponent(path)}&src=${src}`);
                 const data = await res.json();
                 const items = data.items || (data.data && data.data.items) || [];
 
-                if (items.length === 0) {
-                    if (src === 'ophim') return load(path, 'kkphim'); // Nếu OPhim ko có, nhảy sang KKPhim
-                    if (g.innerHTML.includes('🔍')) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim.</p>';
-                    return;
-                }
-
                 const imgBase = (src === 'ophim') ? "https://img.otruyenapi.com/uploads/movies/" : "https://phimimg.com/";
+                const badgeColor = (src === 'ophim') ? "#ff4444" : "#00d2ff";
+
                 const html = items.map(m => {
                     const thumb = m.thumb_url.includes('http') ? m.thumb_url : imgBase + m.thumb_url;
                     return `
                         <div class="card" onclick="view('${m.slug}', '${src}')">
-                            <span class="source-badge">${src.toUpperCase()}</span>
+                            <span class="source-badge" style="background:${badgeColor}">${src.toUpperCase()}</span>
                             <img src="${IMG_PROXY + encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
                             <p class="card-t">${m.name}</p>
                         </div>
                     `;
                 }).join('');
 
-                if (src === 'kkphim' && g.innerHTML !== "") g.innerHTML += html;
-                else g.innerHTML = html;
-
-            } catch (e) { console.error(e); }
+                if (src === 'ophim') {
+                    // Xóa chữ "Đang quét" và hiện phim OPhim
+                    g.innerHTML = html; 
+                    // Tự động gọi tiếp KKPhim để nối thêm dữ liệu
+                    load(path, 'kkphim'); 
+                } else {
+                    // Nối thêm phim KKPhim vào danh sách hiện tại
+                    g.innerHTML += html;
+                    if (g.innerHTML === "") {
+                        g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim.</p>';
+                    }
+                }
+            } catch (e) { 
+                console.error("Lỗi: " + src, e);
+                if (src === 'ophim') load(path, 'kkphim');
+            }
         }
 
         async function search() {
