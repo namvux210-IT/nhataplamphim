@@ -10,18 +10,18 @@
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
         .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
         .search-box { display: flex; gap: 10px; margin: 20px 5%; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
         button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 50px; }
-        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; position: relative; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; display: block; }
+        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); border-color: var(--main); box-shadow: 0 0 15px rgba(0,210,255,0.2); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
         .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; }
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
         .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
         .ep { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .ep.active { background: var(--main); color: #000; }
+        .ep.active { background: var(--main); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -31,16 +31,16 @@
     </nav>
 
     <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm tên phim (Ví dụ: Vây hãm)..." onkeypress="if(event.key==='Enter') search()">
+        <input type="text" id="k" placeholder="Tìm tên phim (không dấu sẽ chính xác hơn)..." onkeypress="if(event.key==='Enter') search()">
         <button onclick="search()">TÌM KIẾM</button>
     </div>
 
     <div id="grid" class="grid"></div>
 
     <div id="player" class="player">
-        <div style="padding: 15px; display: flex; justify-content: space-between; background: #000;">
-            <b id="m-name">...</b>
-            <b onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG X]</b>
+        <div style="padding: 15px; display: flex; justify-content: space-between; background: #000; border-bottom: 1px solid #222;">
+            <b id="m-name" style="color: var(--main)">...</b>
+            <b onclick="closePlayer()" style="color:red; cursor:pointer; border: 1px solid red; padding: 2px 10px; border-radius: 4px;">ĐÓNG X</b>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
@@ -48,7 +48,8 @@
 
     <script>
         const PROXY_URL = "/api/proxy?path=";
-        const IMG_PROXY = "https://images.weserv.nl/?url="; 
+        // Sử dụng Proxy ảnh để vượt rào cản 403 Forbidden
+        const IMG_PROXY = "https://images.weserv.nl/?url=";
         const IMG_BASE = "https://img.otruyenapi.com/uploads/movies/";
 
         async function load(path) {
@@ -57,30 +58,31 @@
             try {
                 const res = await fetch(PROXY_URL + encodeURIComponent(path));
                 const data = await res.json();
-                // Xử lý dữ liệu linh hoạt cho cả trang chủ và tìm kiếm
                 const items = data.items || (data.data && data.data.items) || [];
                 
                 if (items.length === 0) {
-                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim.</p>';
+                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim. Hãy thử tìm tên không dấu.</p>';
                     return;
                 }
 
                 g.innerHTML = items.map(m => {
+                    // Xử lý link ảnh để không bao giờ bị "No Poster"
                     const thumb = m.thumb_url.includes('http') ? m.thumb_url : IMG_BASE + m.thumb_url;
                     const finalImg = IMG_PROXY + encodeURIComponent(thumb);
+
                     return `
                         <div class="card" onclick="view('${m.slug}')">
-                            <img src="${finalImg}" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
+                            <img src="${finalImg}" loading="lazy" onerror="this.src='https://placehold.co/200x300/1a1a1a/ffffff?text=No+Poster'">
                             <p class="card-t">${m.name}</p>
                         </div>
                     `;
                 }).join('');
-            } catch (e) { g.innerHTML = '<p style="color:red; text-align:center">Lỗi kết nối Proxy!</p>'; }
+            } catch (e) { g.innerHTML = '<p style="color:red; text-align:center">Lỗi kết nối Server!</p>'; }
         }
 
         async function search() {
             const k = document.getElementById('k').value;
-            // OPhim dùng endpoint 'tim-kiem' cho API v1
+            // API OPhim v1 tìm kiếm qua endpoint tim-kiem
             if(k) load('tim-kiem?keyword=' + encodeURIComponent(k));
         }
 
