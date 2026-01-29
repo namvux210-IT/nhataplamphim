@@ -11,82 +11,109 @@
         .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
         .search-box { display: flex; gap: 10px; margin: 20px 5%; }
         input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5%; }
-        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; }
+        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 50px; }
+        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; position: relative; }
         .card:hover { transform: translateY(-5px); border-color: var(--main); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; }
+        .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 32px; overflow: hidden; }
+        .loading { grid-column: 1/-1; text-align: center; padding: 50px; color: var(--main); font-weight: bold; }
         /* Player Overlay */
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
-        iframe { width: 100%; flex: 1; border: none; }
+        iframe { width: 100%; flex: 1; border: none; background: #000; }
         .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
         .ep { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; }
         .ep.active { background: var(--main); color: #000; }
+        .close-btn { color: #fff; background: red; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <nav class="nav">
         <a href="/" class="logo">BLUE-MOVIE</a>
-        <div id="status" style="font-size: 12px; color: #666;">Proxy: Active</div>
+        <div id="status" style="font-size: 12px; color: #00ff00;">● Server Proxy Active</div>
     </nav>
 
     <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm tên phim hoặc phim bộ..." onkeypress="if(event.key==='Enter') search()">
+        <input type="text" id="k" placeholder="Tìm tên phim (ví dụ: Vây hãm)..." onkeypress="if(event.key==='Enter') search()">
         <button onclick="search()">TÌM KIẾM</button>
     </div>
 
     <div id="grid" class="grid"></div>
 
     <div id="player" class="player">
-        <div style="padding: 15px; display: flex; justify-content: space-between;">
-            <b id="m-name">...</b>
-            <b onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG X]</b>
+        <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #000;">
+            <b id="m-name" style="color: var(--main);">Đang tải thông tin phim...</b>
+            <div class="close-btn" onclick="closePlayer()">ĐÓNG X</div>
         </div>
-        <iframe id="vid" allowfullscreen></iframe>
+        <iframe id="vid" src="" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
     </div>
 
     <script>
         const PROXY = "/api/proxy?path=";
 
+        // Hàm tải phim chính
         async function load(path) {
             const g = document.getElementById('grid');
-            g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Đang tải phim qua Proxy Python...</p>';
+            g.innerHTML = '<div class="loading">ĐANG TẢI PHIM QUA PROXY...</div>';
             try {
                 const res = await fetch(PROXY + encodeURIComponent(path));
                 const data = await res.json();
-                const items = data.data.items || [];
                 
+                // Logic thông minh để lấy danh sách phim từ các cấu trúc JSON khác nhau
+                const items = data.items || (data.data && data.data.items) || [];
+                
+                if (items.length === 0) {
+                    g.innerHTML = '<div class="loading">Không tìm thấy phim nào.</div>';
+                    return;
+                }
+
                 g.innerHTML = items.map(m => `
                     <div class="card" onclick="view('${m.slug}')">
-                        <img src="https://img.otruyenapi.com/uploads/movies/${m.thumb_url}">
+                        <img src="https://img.otruyenapi.com/uploads/movies/${m.thumb_url}" onerror="this.src='https://via.placeholder.com/200x300?text=No+Poster'">
                         <p class="card-t">${m.name}</p>
                     </div>
                 `).join('');
-            } catch (e) { g.innerHTML = '<p style="color:red">Lỗi Proxy! Hãy kiểm tra log trên Vercel.</p>'; }
+            } catch (e) { 
+                g.innerHTML = '<div class="loading" style="color:red">Lỗi dữ liệu! Thử lại sau ít phút.</div>'; 
+            }
         }
 
+        // Hàm tìm kiếm
         async function search() {
             const k = document.getElementById('k').value;
             if(k) load('tim-kiem?keyword=' + encodeURIComponent(k));
         }
 
+        // Hàm xem chi tiết và lấy tập phim
         async function view(slug) {
             try {
                 const res = await fetch(PROXY + encodeURIComponent('phim/' + slug));
                 const data = await res.json();
-                const m = data.data.item;
-                const sv = m.episodes[0].server_data;
+                
+                // Kiểm tra cấu trúc dữ liệu phim chi tiết
+                const movie = data.movie || (data.data && data.data.item);
+                const episodes = data.episodes || (data.data && data.data.item.episodes);
+                
+                if (!movie || !episodes) throw new Error("Data error");
 
                 document.getElementById('player').style.display = 'flex';
-                document.getElementById('m-name').innerText = m.name;
-                document.getElementById('eps').innerHTML = sv.map((e, i) => `
+                document.getElementById('m-name').innerText = movie.name;
+                
+                const sv = episodes[0].server_data;
+                const epDiv = document.getElementById('eps');
+                
+                epDiv.innerHTML = sv.map((e, i) => `
                     <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
                 `).join('');
-                play(sv[0].link_embed, document.querySelector('.ep'));
-            } catch (e) { alert("Lỗi tải tập phim!"); }
+                
+                // Tự động phát tập đầu
+                play(sv[0].link_embed, epDiv.querySelector('.ep'));
+            } catch (e) { 
+                alert("Không thể tải link phim này. Vui lòng thử phim khác!"); 
+                console.error(e);
+            }
         }
 
         function play(url, el) {
@@ -100,6 +127,7 @@
             document.getElementById('vid').src = "";
         }
 
+        // Khởi tạo trang với danh sách phim mới nhất
         window.onload = () => load('danh-sach/phim-moi-cap-nhat');
     </script>
 </body>
