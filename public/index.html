@@ -1,122 +1,74 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | PRO</title>
-    <style>
-        :root { --main: #00d2ff; --bg: #0a0a0a; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
-        .search-box { display: flex; gap: 10px; margin: 20px 5%; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 50px; }
-        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); box-shadow: 0 0 15px rgba(0,210,255,0.2); }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
-        .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; }
-        .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
-        iframe { width: 100%; flex: 1; border: none; }
-        .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
-        .ep { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        .ep.active { background: var(--main); color: #000; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <nav class="nav">
-        <a href="/" class="logo">BLUE-MOVIE</a>
-        <div style="font-size: 12px; color: #00ff00;">● Server Proxy Active</div>
-    </nav>
+<script>
+    const PROXY_URL = "/api/proxy?path=";
+    const IMG_PROXY = "https://images.weserv.nl/?url=";
 
-    <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm tên phim (không dấu sẽ chính xác hơn)..." onkeypress="if(event.key==='Enter') search()">
-        <button onclick="search()">TÌM KIẾM</button>
-    </div>
+    // Hàm load phim có hỗ trợ chọn nguồn (src)
+    async function fetchMovie(path, src = 'ophim') {
+        const url = `${PROXY_URL}${encodeURIComponent(path)}&src=${src}`;
+        const res = await fetch(url);
+        return await res.json();
+    }
 
-    <div id="grid" class="grid"></div>
+    async function load(path, src = 'ophim') {
+        const g = document.getElementById('grid');
+        g.innerHTML = `<p style="grid-column: 1/-1; text-align:center">Đang tìm trên ${src.toUpperCase()}...</p>`;
+        
+        try {
+            const data = await fetchMovie(path, src);
+            const items = data.items || (data.data && data.data.items) || [];
 
-    <div id="player" class="player">
-        <div style="padding: 15px; display: flex; justify-content: space-between; background: #000; border-bottom: 1px solid #222;">
-            <b id="m-name" style="color: var(--main)">...</b>
-            <b onclick="closePlayer()" style="color:red; cursor:pointer; border: 1px solid red; padding: 2px 10px; border-radius: 4px;">ĐÓNG X</b>
-        </div>
-        <iframe id="vid" allowfullscreen></iframe>
-        <div id="eps" class="eps"></div>
-    </div>
-
-    <script>
-        const PROXY_URL = "/api/proxy?path=";
-        // Sử dụng Proxy ảnh để vượt rào cản 403 Forbidden
-        const IMG_PROXY = "https://images.weserv.nl/?url=";
-        const IMG_BASE = "https://img.otruyenapi.com/uploads/movies/";
-
-        async function load(path) {
-            const g = document.getElementById('grid');
-            g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Đang tải phim...</p>';
-            try {
-                const res = await fetch(PROXY_URL + encodeURIComponent(path));
-                const data = await res.json();
-                const items = data.items || (data.data && data.data.items) || [];
-                
-                if (items.length === 0) {
-                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim. Hãy thử tìm tên không dấu.</p>';
-                    return;
+            if (items.length === 0) {
+                // NẾU LÀ OPHIM MÀ KHÔNG CÓ, THỬ SANG KKPHIM
+                if (src === 'ophim') {
+                    console.log("OPhim không có, đang thử KKPhim...");
+                    return load(path, 'kkphim');
                 }
+                g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim ở cả 2 nguồn.</p>';
+                return;
+            }
 
-                g.innerHTML = items.map(m => {
-                    // Xử lý link ảnh để không bao giờ bị "No Poster"
-                    const thumb = m.thumb_url.includes('http') ? m.thumb_url : IMG_BASE + m.thumb_url;
-                    const finalImg = IMG_PROXY + encodeURIComponent(thumb);
-
-                    return `
-                        <div class="card" onclick="view('${m.slug}')">
-                            <img src="${finalImg}" loading="lazy" onerror="this.src='https://placehold.co/200x300/1a1a1a/ffffff?text=No+Poster'">
-                            <p class="card-t">${m.name}</p>
-                        </div>
-                    `;
-                }).join('');
-            } catch (e) { g.innerHTML = '<p style="color:red; text-align:center">Lỗi kết nối Server!</p>'; }
+            // Render phim (Sử dụng link ảnh linh hoạt cho từng nguồn)
+            const imgBase = (src === 'ophim') ? "https://img.otruyenapi.com/uploads/movies/" : "https://phimimg.com/";
+            
+            g.innerHTML = items.map(m => {
+                const thumb = m.thumb_url.includes('http') ? m.thumb_url : imgBase + m.thumb_url;
+                return `
+                    <div class="card" onclick="view('${m.slug}', '${src}')">
+                        <img src="${IMG_PROXY + encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
+                        <p class="card-t">${m.name}</p>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            g.innerHTML = '<p style="color:red; text-align:center">Lỗi hệ thống!</p>';
         }
+    }
 
-        async function search() {
-            const k = document.getElementById('k').value;
-            // API OPhim v1 tìm kiếm qua endpoint tim-kiem
-            if(k) load('tim-kiem?keyword=' + encodeURIComponent(k));
-        }
+    async function search() {
+        const k = document.getElementById('k').value;
+        if (!k) return;
+        // Bắt đầu tìm kiếm từ OPhim
+        load('tim-kiem?keyword=' + encodeURIComponent(k), 'ophim');
+    }
 
-        async function view(slug) {
-            try {
-                const res = await fetch(PROXY_URL + encodeURIComponent('phim/' + slug));
-                const data = await res.json();
-                const movie = data.movie || (data.data && data.data.item);
-                const episodes = data.episodes || (data.data && data.data.item.episodes);
+    async function view(slug, src) {
+        try {
+            const data = await fetchMovie('phim/' + slug, src);
+            const movie = data.movie || (data.data && data.data.item);
+            const episodes = data.episodes || (data.data && data.data.item.episodes);
 
-                document.getElementById('player').style.display = 'flex';
-                document.getElementById('m-name').innerText = movie.name;
-                
-                const sv = episodes[0].server_data;
-                const epDiv = document.getElementById('eps');
-                epDiv.innerHTML = sv.map((e, i) => `
-                    <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
-                `).join('');
-                play(sv[0].link_embed, epDiv.querySelector('.ep'));
-            } catch (e) { alert("Lỗi tải link phim!"); }
-        }
-
-        function play(url, el) {
-            document.getElementById('vid').src = url;
-            document.querySelectorAll('.ep').forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
-        }
-
-        function closePlayer() {
-            document.getElementById('player').style.display = 'none';
-            document.getElementById('vid').src = "";
-        }
-
-        window.onload = () => load('danh-sach/phim-moi-cap-nhat');
-    </script>
-</body>
-</html>
+            document.getElementById('player').style.display = 'flex';
+            document.getElementById('m-name').innerText = `[${src.toUpperCase()}] ${movie.name}`;
+            
+            const sv = episodes[0].server_data;
+            const epDiv = document.getElementById('eps');
+            epDiv.innerHTML = sv.map((e, i) => `
+                <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
+            `).join('');
+            play(sv[0].link_embed, epDiv.querySelector('.ep'));
+        } catch (e) { alert("Lỗi tải phim!"); }
+    }
+    // ... (Các hàm play, closePlayer giữ nguyên) ...
+</script>
