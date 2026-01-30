@@ -13,20 +13,19 @@ def proxy():
     keyword = request.args.get('keyword', '')
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://phimapi.com/"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
     try:
         if source == 'nguonc':
             base = "https://phim.nguonc.com/api"
-            # NguonC dùng film/{slug} cho chi tiết
+            # NguonC dùng /film/{slug} cho chi tiết
             url = f"{base}/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
         elif source == 'kkphim':
             base = "https://phimapi.com"
-            # KKPhim BẮT BUỘC phải có tiền tố /phim/ để trả về danh sách tập
+            # KKPhim BẮT BUỘC dùng /phim/{slug} để lấy được tập phim
             if path:
-                clean_slug = path.split('/')[-1] # Lấy slug cuối cùng để tránh trùng lặp tiền tố
+                clean_slug = path.split('/')[-1]
                 url = f"{base}/phim/{clean_slug}"
             elif keyword:
                 url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
@@ -36,7 +35,7 @@ def proxy():
             base = "https://ophim1.com/api/v1"
             url = f"{base}/{path}" if path else (f"{base}/tim-kiem?keyword={keyword}&page={page}" if keyword else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}")
 
-        resp = requests.get(url, headers=headers, timeout=10)
+        resp = requests.get(url, headers=headers, timeout=15)
         return make_response(jsonify(resp.json()))
     except Exception as e:
         return jsonify({"error": str(e), "items": []})
