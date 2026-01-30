@@ -21,22 +21,22 @@ def proxy():
         if source == 'nguonc':
             base = "https://phim.nguonc.com/api"
             # NguonC dùng film/{slug} cho chi tiết
-            target_url = f"{base}/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
+            url = f"{base}/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
         elif source == 'kkphim':
             base = "https://phimapi.com"
-            # KKPhim BẮT BUỘC dùng phim/{slug} để lấy được tập phim
+            # KKPhim BẮT BUỘC phải có tiền tố /phim/ để trả về danh sách tập
             if path:
-                clean_path = path.replace('film/', '').replace('phim/', '')
-                target_url = f"{base}/phim/{clean_path}"
+                clean_slug = path.split('/')[-1] # Lấy slug cuối cùng để tránh trùng lặp tiền tố
+                url = f"{base}/phim/{clean_slug}"
             elif keyword:
-                target_url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
+                url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
             else:
-                target_url = f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
+                url = f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
         else:
             base = "https://ophim1.com/api/v1"
-            target_url = f"{base}/{path}" if path else (f"{base}/tim-kiem?keyword={keyword}&page={page}" if keyword else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}")
+            url = f"{base}/{path}" if path else (f"{base}/tim-kiem?keyword={keyword}&page={page}" if keyword else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}")
 
-        response = requests.get(target_url, headers=headers, timeout=10)
-        return make_response(jsonify(response.json()))
+        resp = requests.get(url, headers=headers, timeout=10)
+        return make_response(jsonify(resp.json()))
     except Exception as e:
         return jsonify({"error": str(e), "items": []})
