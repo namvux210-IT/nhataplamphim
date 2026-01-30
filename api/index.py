@@ -7,36 +7,35 @@ CORS(app)
 
 @app.route('/api/proxy')
 def proxy():
-    path = request.args.get('path', 'danh-sach/phim-moi-cap-nhat')
+    path = request.args.get('path', '')
     source = request.args.get('src', 'ophim')
     page = request.args.get('page', '1')
     
-    # Xử lý Endpoint cho từng nguồn
-    if source == 'nguonc':
-        base_url = "https://phim.nguonc.com/api"
-        if 'tim-kiem' in path or 'search' in path:
-            keyword = request.args.get('keyword', '')
-            target_url = f"{base_url}/films/search?keyword={keyword}&page={page}"
-        elif 'danh-sach' in path:
-            target_url = f"{base_url}/films/phim-moi-cap-nhat?page={page}"
+    # Lấy các tham số lọc nâng cao từ URL web truyền lên
+    keyword = request.args.get('keyword', '')
+    category = request.args.get('category', '')
+    country = request.args.get('country', '')
+    year = request.args.get('year', '')
+
+    if source == 'kkphim':
+        # Sử dụng Endpoint v1 mới của KKPhim để hỗ trợ lọc
+        base_url = "https://phimapi.com/v1/api"
+        if 'tim-kiem' in path or keyword:
+            target_url = f"{base_url}/tim-kiem?keyword={keyword}&page={page}"
+            if category: target_url += f"&category={category}"
+            if country: target_url += f"&country={country}"
+            if year: target_url += f"&year={year}"
+            target_url += "&limit=20"
         else:
-            target_url = f"{base_url}/{path}"
-    elif source == 'kkphim':
-        base_url = "https://phimapi.com"
-        target_url = f"{base_url}/{path}?page={page}"
-        if 'keyword' in request.args:
-            target_url += f"&keyword={request.args.get('keyword')}"
+            target_url = f"https://phimapi.com/{path}?page={page}"
+    elif source == 'nguonc':
+        target_url = f"https://phim.nguonc.com/api/films/search?keyword={keyword}&page={page}" if keyword else f"https://phim.nguonc.com/api/{path}?page={page}"
     else: # OPhim
-        base_url = "https://ophim1.com/api/v1"
-        target_url = f"{base_url}/{path}?page={page}"
-        if 'keyword' in request.args:
-            target_url += f"&keyword={request.args.get('keyword')}"
+        target_url = f"https://ophim1.com/api/v1/{path}?page={page}"
+        if keyword: target_url += f"&keyword={keyword}"
 
     try:
         response = requests.get(target_url, timeout=10)
-        data = response.json()
-        res = make_response(jsonify(data))
-        res.headers['Cache-Control'] = 's-maxage=60, stale-while-revalidate=30'
-        return res
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return make_response(jsonify(response.json()))
+    except:
+        return jsonify({"error": "Lỗi server"}), 500
