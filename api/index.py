@@ -12,19 +12,21 @@ def proxy():
     page = request.args.get('page', '1')
     keyword = request.args.get('keyword', '')
 
+    # GIẢ LẬP TRÌNH DUYỆT ĐỂ KHÔNG BỊ CHẶN LINK
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Referer": "https://phimapi.com/",
+        "Origin": "https://phimapi.com"
     }
 
     try:
         if source == 'nguonc':
             base = "https://phim.nguonc.com/api"
-            # NguonC dùng /film/{slug} cho chi tiết
             url = f"{base}/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
         elif source == 'kkphim':
             base = "https://phimapi.com"
-            # KKPhim BẮT BUỘC dùng /phim/{slug} để lấy được tập phim
             if path:
+                # ÉP ĐÚNG PATH ĐỂ LẤY TẬP PHIM
                 clean_slug = path.split('/')[-1]
                 url = f"{base}/phim/{clean_slug}"
             elif keyword:
