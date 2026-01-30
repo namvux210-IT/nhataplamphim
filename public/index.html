@@ -3,58 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | TRIPLE ENGINE</title>
+    <title>BLUE-MOVIE | ADVANCED SEARCH</title>
     <style>
-        :root { --main: #00d2ff; --bg: #0a0a0a; --ophim: #ff3e3e; --kkphim: #00d2ff; --nguonc: #ffcc00; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
-        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
-        .cats { display: flex; gap: 10px; overflow-x: auto; padding: 15px 5%; background: #0f0f0f; scrollbar-width: none; }
-        .cats::-webkit-scrollbar { display: none; }
-        .cat-item { padding: 8px 18px; background: #1a1a1a; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; border: 1px solid #333; }
-        .cat-item.active { background: var(--main); color: #000; font-weight: bold; }
-        .search-box { display: flex; gap: 10px; margin: 15px 5%; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 0 5% 30px; }
-        .card { background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); }
+        :root { --main: #00d2ff; --bg: #0a0a0a; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; }
+        .nav { background: #000; padding: 15px; text-align: center; border-bottom: 1px solid #222; }
+        .logo { font-size: 22px; font-weight: 900; color: var(--main); text-decoration: none; }
+        
+        /* Bảng lọc nâng cao */
+        .filter-box { padding: 15px 5%; display: flex; flex-wrap: wrap; gap: 10px; background: #111; }
+        select, input { background: #222; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 5px; outline: none; }
+        input { flex: 1; min-width: 200px; border-color: var(--main); }
+        button { background: var(--main); color: #000; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 20px 5%; }
+        .card { background: #111; border-radius: 8px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
         .card-t { padding: 8px; font-size: 12px; text-align: center; margin: 0; font-weight: bold; height: 32px; overflow: hidden; }
         .badge { position: absolute; top: 5px; left: 5px; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; color: #000; }
+        
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
-        .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 8px; background: #111; max-height: 180px; overflow-y: auto; }
-        .ep { padding: 8px 12px; background: #222; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .eps { padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; background: #111; max-height: 150px; overflow-y: auto; }
+        .ep { padding: 6px 12px; background: #333; border-radius: 4px; cursor: pointer; font-size: 11px; }
         .ep.active { background: var(--main); color: #000; }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/" class="logo">BLUE-MOVIE</a>
-        <div style="font-size: 10px; color: #aaa;">Data: OPhim, KKPhim, NguonC</div>
-    </nav>
+    <nav class="nav"><a href="/" class="logo">BLUE-MOVIE</a></nav>
 
-    <div class="cats">
-        <div class="cat-item active" onclick="changeCat('danh-sach/phim-moi-cap-nhat', this)">Mới nhất</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/hanh-dong', this)">Hành động</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/tinh-cam', this)">Tình cảm</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/hoat-hinh', this)">Hoạt hình</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/kinh-di', this)">Kinh dị</div>
-    </div>
-
-    <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm kiếm phim..." onkeypress="if(event.key==='Enter') search()">
-        <button onclick="search()">TÌM</button>
+    <div class="filter-box">
+        <input type="text" id="k" placeholder="Nhập tên phim...">
+        <select id="cat">
+            <option value="">Thể loại</option>
+            <option value="hanh-dong">Hành động</option>
+            <option value="tinh-cam">Tình cảm</option>
+            <option value="hoat-hinh">Hoạt hình</option>
+        </select>
+        <select id="country">
+            <option value="">Quốc gia</option>
+            <option value="trung-quoc">Trung Quốc</option>
+            <option value="han-quoc">Hàn Quốc</option>
+            <option value="au-my">Âu Mỹ</option>
+        </select>
+        <select id="year">
+            <option value="">Năm</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+        </select>
+        <button onclick="search()">TÌM KIẾM</button>
     </div>
 
     <div id="grid" class="grid"></div>
-    <button style="display:block; margin: 10px auto 40px; padding: 10px 30px; background: transparent; color: var(--main); border: 1px solid var(--main); border-radius: 20px; cursor: pointer;" onclick="loadMore()">XEM THÊM</button>
+    <button style="display:block; margin: 0 auto 40px; background:none; color:var(--main); border:1px solid var(--main); padding:10px 30px; border-radius:20px; cursor:pointer;" onclick="loadMore()">TẢI THÊM</button>
 
     <div id="player" class="player">
-        <div style="padding: 10px 15px; display: flex; justify-content: space-between; align-items:center; background: #000; border-bottom: 1px solid #222;">
-            <span id="m-name" style="font-size:14px; font-weight:bold; color:var(--main)">...</span>
-            <span onclick="closePlayer()" style="color:red; cursor:pointer; font-weight:bold;">ĐÓNG [X]</span>
+        <div style="padding:10px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;">
+            <span id="m-name" style="color:var(--main); font-weight:bold;">...</span>
+            <span onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG]</span>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
@@ -63,20 +69,18 @@
     <script>
         const PROXY = "/api/proxy?path=";
         const IMG_PROXY = "https://images.weserv.nl/?url=";
-        let currentPage = 1, currentPath = 'danh-sach/phim-moi-cap-nhat';
+        let currentPage = 1, currentParams = '';
 
-        async function load(path, page = 1, append = false) {
+        async function load(params, page = 1, append = false) {
             const g = document.getElementById('grid');
-            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Đang tải phim từ 3 nguồn...</p>';
+            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang tìm phim theo bộ lọc...</p>';
             
             try {
-                const query = path.includes('?') ? `&${path.split('?')[1]}` : '';
-                const cleanPath = path.split('?')[0];
-
+                // Gọi song song 3 nguồn (KKPhim dùng bộ lọc mới)
                 const [resO, resK, resN] = await Promise.all([
-                    fetch(`${PROXY}${encodeURIComponent(cleanPath)}&src=ophim&page=${page}${query}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}${encodeURIComponent(cleanPath)}&src=kkphim&page=${page}${query}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}${encodeURIComponent(cleanPath)}&src=nguonc&page=${page}${query}`).then(r => r.json().catch(() => ({})))
+                    fetch(`${PROXY}tim-kiem&src=ophim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}tim-kiem&src=kkphim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}tim-kiem&src=nguonc&page=${page}${params}`).then(r => r.json().catch(() => ({})))
                 ]);
 
                 const itemsO = (resO.items || resO.data?.items || []).map(i => ({...i, _src: 'ophim'}));
@@ -105,42 +109,41 @@
             } catch (e) { console.error(e); }
         }
 
+        function search() {
+            currentPage = 1;
+            const k = document.getElementById('k').value;
+            const cat = document.getElementById('cat').value;
+            const country = document.getElementById('country').value;
+            const year = document.getElementById('year').value;
+            
+            // Tạo chuỗi tham số để gửi qua Proxy
+            currentParams = `&keyword=${encodeURIComponent(k)}&category=${cat}&country=${country}&year=${year}`;
+            load(currentParams, 1, false);
+        }
+
         async function view(slug, src) {
             try {
                 const apiPath = (src === 'nguonc') ? `film/${slug}` : `phim/${slug}`;
                 const res = await fetch(`${PROXY}${encodeURIComponent(apiPath)}&src=${src}`).then(r => r.json());
                 const movie = res.movie || res.data?.item || res.film;
                 const episodes = res.episodes || res.data?.item.episodes;
-                
                 document.getElementById('player').style.display = 'flex';
                 document.getElementById('m-name').innerText = movie.name;
-                
                 const items = (src === 'nguonc') ? episodes[0].items : episodes[0].server_data;
-                const epDiv = document.getElementById('eps');
-                epDiv.innerHTML = items.map((e, i) => `<div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>`).join('');
-                play(items[0].link_embed || items[0].m3u8_url, epDiv.querySelector('.ep'));
+                document.getElementById('eps').innerHTML = items.map((e, i) => `<div class="ep" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>`).join('');
+                play(items[0].link_embed || items[0].m3u8_url, document.querySelector('.ep'));
             } catch (e) { alert("Lỗi tải phim!"); }
         }
 
         function play(u, el) { 
             document.getElementById('vid').src = u; 
             document.querySelectorAll('.ep').forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
+            el.classList.add('active');
         }
         function closePlayer() { document.getElementById('player').style.display='none'; document.getElementById('vid').src=""; }
-        function changeCat(p, el) { 
-            document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active'); currentPath = p; currentPage = 1; load(p, 1, false); 
-        }
-        function search() {
-            const v = document.getElementById('k').value;
-            if(v) { 
-                const k = v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/đ/g, 'd').replace(/\s+/g, '-');
-                currentPath = `tim-kiem?keyword=${k}`; currentPage = 1; load(currentPath, 1, false); 
-            }
-        }
-        function loadMore() { currentPage++; load(currentPath, currentPage, true); }
-        window.onload = () => load(currentPath, 1);
+        function loadMore() { currentPage++; load(currentParams, currentPage, true); }
+        
+        window.onload = () => load('', 1);
     </script>
 </body>
 </html>
