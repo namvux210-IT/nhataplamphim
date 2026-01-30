@@ -3,58 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | FINAL FIX</title>
+    <title>BLUE-MOVIE | FIX TRIỆT ĐỂ</title>
     <style>
         :root { --main: #00d2ff; --bg: #050505; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 1000; }
         .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
-        .search-box { padding: 20px 5%; display: flex; gap: 10px; background: #0a0a0a; border-bottom: 1px solid #111; }
+        .search-area { padding: 20px 5%; display: flex; gap: 10px; background: #0a0a0a; border-bottom: 1px solid #111; }
         #search-input { flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #333; background: #151515; color: #fff; outline: none; }
         .btn-search { background: var(--main); color: #000; border: none; padding: 0 30px; border-radius: 25px; font-weight: bold; cursor: pointer; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 20px 5%; }
         .card { background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); }
+        .card:hover { transform: translateY(-5px); border-color: var(--main); box-shadow: 0 5px 15px rgba(0,210,255,0.2); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
         .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .badge { position: absolute; top: 5px; left: 5px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #000; }
+        .badge { position: absolute; top: 5px; left: 5px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #000; z-index: 10; }
         
-        /* PLAYER OVERLAY FIX - Giải quyết lỗi chồng chéo */
+        /* PLAYER OVERLAY FIX */
         .player-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
         .player-header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
         iframe { width: 100%; flex: 1; border: none; background: #000; }
-        .ep-section { padding: 20px 5%; background: #0a0a0a; max-height: 200px; overflow-y: auto; border-top: 1px solid #222; }
+        .ep-wrap { padding: 20px 5%; background: #0a0a0a; max-height: 250px; overflow-y: auto; border-top: 1px solid #222; }
         .ep-list { display: flex; flex-wrap: wrap; gap: 8px; }
         .ep-item { padding: 8px 15px; background: #1a1a1a; border-radius: 4px; cursor: pointer; font-size: 12px; border: 1px solid #333; }
-        .ep-item.active { background: var(--main); color: #000; font-weight: bold; }
+        .ep-item.active { background: var(--main); color: #000; font-weight: bold; border-color: var(--main); }
     </style>
 </head>
 <body>
     <nav class="nav"><a href="/" class="logo">BLUE-MOVIE</a></nav>
-    <div class="search-box">
-        <input type="text" id="search-input" placeholder="Tìm tên phim...">
+    <div class="search-area">
+        <input type="text" id="search-input" placeholder="Gõ tên phim...">
         <button class="btn-search" onclick="doSearch()">TÌM PHIM</button>
     </div>
     <div id="grid" class="grid"></div>
 
     <div id="player" class="player-overlay">
         <div class="player-header">
-            <b id="m-name" style="color:var(--main)">...</b>
-            <button onclick="closePlayer()" style="background:#ff4444; color:#fff; border:none; padding:5px 15px; border-radius:5px; cursor:pointer;">ĐÓNG [X]</button>
+            <b id="m-name" style="color:var(--main); font-size: 16px;">Đang tải...</b>
+            <button onclick="closePlayer()" style="background:#ff4444; color:#fff; border:none; padding:6px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">ĐÓNG [X]</button>
         </div>
         <iframe id="video-iframe" allowfullscreen></iframe>
-        <div class="ep-section">
+        <div class="ep-wrap">
             <div id="eps" class="ep-list"></div>
         </div>
     </div>
 
     <script>
         const API = "/api/proxy?";
-        const IMG = "https://images.weserv.nl/?url=";
+        const IMG_URL = "https://images.weserv.nl/?url=";
 
         async function loadMovies(keyword = '', page = 1) {
             const grid = document.getElementById('grid');
-            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center">🚀 Đang tải dữ liệu từ 2 nguồn...</p>';
+            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center">🚀 Đang kết nối nguồn phim...</p>';
             try {
                 const query = `keyword=${encodeURIComponent(keyword)}&page=${page}`;
                 const [rK, rN] = await Promise.all([
@@ -66,59 +66,76 @@
                 const itemsN = (rN.data || rN.items || []).map(i => ({...i, _s: 'nguonc'}));
                 
                 const all = [...itemsN, ...itemsK];
-                grid.innerHTML = all.map(m => {
+                grid.innerHTML = all.length ? all.map(m => {
                     let thumb = m.poster_url || m.thumb_url;
                     if(thumb && !thumb.includes('http')) thumb = (m._s==='kkphim'?'https://phimimg.com/':'') + thumb;
                     return `
-                        <div class="card" onclick="viewMovie('${m.slug}', '${m._s}')">
+                        <div class="card" onclick="openMovie('${m.slug}', '${m._s}')">
                             <span class="badge" style="background:${m._s==='kkphim'?'#00d2ff':'#ffcc00'}">${m._s.toUpperCase()}</span>
-                            <img src="${IMG + encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
+                            <img src="${IMG_URL + encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
                             <p class="card-t">${m.name}</p>
                         </div>`;
-                }).join('');
+                }).join('') : '<p style="grid-column:1/-1;text-align:center">😢 Không tìm thấy phim!</p>';
             } catch (e) { console.error(e); }
         }
 
-        async function viewMovie(slug, src) {
-            closePlayer(); // Reset sạch trình phát trước khi mở phim mới
+        async function openMovie(slug, src) {
+            // Bước 1: Dọn dẹp tuyệt đối
+            const player = document.getElementById('player');
+            const epDiv = document.getElementById('eps');
+            const iframe = document.getElementById('video-iframe');
+            const nameLabel = document.getElementById('m-name');
+            
+            player.style.display = 'none';
+            iframe.src = "";
+            epDiv.innerHTML = "";
+            nameLabel.innerText = "Đang xử lý dữ liệu...";
+
             try {
+                // Bước 2: Gọi API chi tiết
                 const res = await fetch(`${API}path=${encodeURIComponent(slug)}&src=${src}`).then(r => r.json());
-                const movie = (src === 'kkphim') ? res.data.item : res.movie;
-                const episodes = (src === 'kkphim') ? res.data.item.episodes : res.movie.episodes;
-
-                if (!episodes || episodes.length === 0) throw new Error();
-
-                document.getElementById('player').style.display = 'flex';
-                document.getElementById('m-name').innerText = movie.name;
                 
-                // Tìm server có dữ liệu
-                const activeSv = episodes.find(s => (s.server_data || s.items)?.length > 0) || episodes[0];
-                const list = activeSv.server_data || activeSv.items;
+                let movie, episodes;
+                if (src === 'kkphim') {
+                    movie = res.data?.item;
+                    episodes = res.data?.item?.episodes;
+                } else {
+                    movie = res.movie;
+                    episodes = res.movie?.episodes;
+                }
+
+                if (!episodes || episodes.length === 0) throw new Error("No link");
+
+                // Bước 3: Hiển thị giao diện mới
+                player.style.display = 'flex';
+                nameLabel.innerText = movie.name;
                 
-                const epDiv = document.getElementById('eps');
+                // Quét server để tìm link thực tế
+                const activeServer = episodes.find(s => (s.server_data || s.items)?.length > 0) || episodes[0];
+                const list = activeServer.server_data || activeServer.items;
+                
                 epDiv.innerHTML = list.map((e, i) => `
-                    <div class="ep-item ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
+                    <div class="ep-item ${i === 0 ? 'active' : ''}" onclick="playVideo('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
                 `).join('');
                 
-                play(list[0].link_embed || list[0].m3u8_url, epDiv.querySelector('.ep-item'));
-            } catch (e) { 
-                alert("Lỗi: Phim này hiện không có sẵn link từ nguồn này!"); 
+                if(list[0]) playVideo(list[0].link_embed || list[0].m3u8_url, epDiv.querySelector('.ep-item'));
+            } catch (e) {
+                alert("Lỗi: Nguồn phim này đang gặp sự cố link, hãy thử phim khác!");
                 closePlayer();
             }
         }
 
-        function play(url, el) {
+        function playVideo(url, btn) {
             if(!url) return;
             document.getElementById('video-iframe').src = url;
             document.querySelectorAll('.ep-item').forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
+            if(btn) btn.classList.add('active');
         }
 
         function closePlayer() {
             document.getElementById('player').style.display = 'none';
             document.getElementById('video-iframe').src = "";
-            document.getElementById('eps').innerHTML = ""; // Xóa tập cũ
-            document.getElementById('m-name').innerText = "Đang tải...";
+            document.getElementById('eps').innerHTML = "";
         }
 
         function doSearch() { loadMovies(document.getElementById('search-input').value); }
