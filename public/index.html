@@ -3,81 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | 2022 SCANNER</title>
+    <title>BLUE-MOVIE | SEARCH EVERYTHING</title>
     <style>
-        :root { --main: #00d2ff; --bg: #0a0a0a; }
+        :root { --main: #00d2ff; --bg: #050505; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
-        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
-        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; }
+        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 1000; }
+        .logo { font-size: 22px; font-weight: 900; color: var(--main); text-decoration: none; }
         
-        /* Filter Box */
-        .filter-box { padding: 15px 5%; display: flex; flex-wrap: wrap; gap: 10px; background: #111; border-bottom: 1px solid #222; }
-        input, select { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; flex: 1; min-width: 120px; outline: none; }
-        input:focus, select:focus { border-color: var(--main); }
-        .btn-search { background: var(--main); color: #000; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .search-container { padding: 20px 5%; display: flex; gap: 10px; background: #0a0a0a; }
+        #search-input { flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #333; background: #151515; color: #fff; outline: none; font-size: 16px; }
+        #search-input:focus { border-color: var(--main); box-shadow: 0 0 10px rgba(0,210,255,0.2); }
+        .search-btn { background: var(--main); color: #000; border: none; padding: 0 25px; border-radius: 25px; font-weight: bold; cursor: pointer; }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 20px 5%; }
-        .card { background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
-        .card-t { padding: 8px; font-size: 12px; text-align: center; margin: 0; font-weight: bold; height: 32px; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 10px 5% 40px; }
+        .card { background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.2s; }
+        .card:hover { transform: scale(1.03); border-color: var(--main); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .card-t { padding: 8px; font-size: 12px; text-align: center; margin: 0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .badge { position: absolute; top: 5px; left: 5px; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; color: #000; z-index: 10; }
         
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
         .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 8px; background: #111; max-height: 200px; overflow-y: auto; }
         .ep { padding: 8px 12px; background: #222; border-radius: 4px; cursor: pointer; font-size: 11px; border: 1px solid #333; }
-        .ep.active { background: var(--main); color: #000; }
+        .ep.active { background: var(--main); color: #000; border-color: var(--main); }
     </style>
 </head>
 <body>
     <nav class="nav">
         <a href="/" class="logo">BLUE-MOVIE</a>
-        <div style="font-size: 10px; color: #00ff00;">Engine: NguonC + KKPhim (2022 Ready)</div>
+        <div style="font-size: 10px; color: #aaa;">OPhim • KKPhim • NguonC</div>
     </nav>
 
-    <div class="filter-box">
-        <input type="text" id="k" placeholder="Tên phim...">
-        <select id="y">
-            <option value="">Chọn năm</option>
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-            <option value="2023">2023</option>
-            <option value="2022" selected>2022</option>
-            <option value="2021">2021</option>
-            <option value="2020">2020</option>
-            <option value="2019">2019</option>
-        </select>
-        <button class="btn-search" onclick="search()">QUÉT DỮ LIỆU</button>
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Nhập tên phim bạn muốn xem...">
+        <button class="search-btn" onclick="triggerSearch()">TÌM PHIM</button>
     </div>
 
     <div id="grid" class="grid"></div>
-    <button style="display:block; margin: 20px auto 50px; padding: 10px 40px; background:none; border:1px solid var(--main); color:var(--main); border-radius:20px; cursor:pointer;" onclick="loadMore()">XEM TIẾP</button>
+    <button id="load-more" style="display:block; margin: 0 auto 50px; padding: 10px 30px; background:none; border:1px solid var(--main); color:var(--main); border-radius:20px; cursor:pointer;" onclick="loadMore()">TẢI THÊM PHIM</button>
 
     <div id="player" class="player">
-        <div style="padding:15px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;">
-            <b id="m-name" style="color:var(--main)">...</b>
-            <b onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG X]</b>
+        <div style="padding:10px 5%; display:flex; justify-content:space-between; align-items:center; background:#000; border-bottom:1px solid #222;">
+            <span id="m-name" style="color:var(--main); font-weight:bold; font-size:14px;">...</span>
+            <span onclick="closePlayer()" style="color:#ff4444; cursor:pointer; font-weight:bold; border:1px solid #ff4444; padding:4px 10px; border-radius:5px;">ĐÓNG [X]</span>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
     </div>
 
     <script>
-        const PROXY = "/api/proxy?path=";
+        const PROXY = "/api/proxy?";
         const IMG_PROXY = "https://images.weserv.nl/?url=";
-        let currentPage = 1, currentParams = '&year=2022'; // Mặc định quét phim 2022
+        let currentPage = 1, currentKeyword = '';
 
-        async function load(params, page = 1, append = false) {
+        async function loadData(keyword = '', page = 1, append = false) {
             const g = document.getElementById('grid');
-            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang quét kho lưu trữ nguồn phim...</p>';
+            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang tìm kiếm dữ liệu...</p>';
+            
+            const params = `keyword=${encodeURIComponent(keyword)}&page=${page}`;
             
             try {
-                // Gọi đồng thời cả 3 nguồn với tham số năm
                 const [resO, resK, resN] = await Promise.all([
-                    fetch(`${PROXY}&src=ophim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}&src=kkphim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}&src=nguonc&page=${page}${params}`).then(r => r.json().catch(() => ({})))
+                    fetch(`${PROXY}src=ophim&${params}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}src=kkphim&${params}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}src=nguonc&${params}`).then(r => r.json().catch(() => ({})))
                 ]);
 
                 const itemsO = (resO.items || resO.data?.items || []).map(i => ({...i, _src: 'ophim'}));
@@ -93,19 +83,19 @@
                 }
 
                 if (!append) g.innerHTML = "";
-                if(combined.length === 0) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim cũ phù hợp!</p>';
+                if(combined.length === 0) {
+                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Rất tiếc, không tìm thấy phim này!</p>';
+                    return;
+                }
 
                 g.innerHTML += combined.map(m => {
                     let thumb = m.poster_url || m.thumb_url;
                     const imgBase = (m._src==='ophim')?"https://img.otruyenapi.com/uploads/movies/":(m._src==='kkphim')?"https://phimimg.com/":"";
                     if(thumb && !thumb.includes('http')) thumb = imgBase + thumb;
-                    
                     const color = (m._src==='ophim')?'#ff3e3e':(m._src==='kkphim')?'#00d2ff':'#ffcc00';
-                    const textColor = (m._src==='nguonc')?'#000':'#fff';
-
                     return `
                         <div class="card" onclick="view('${m.slug}', '${m._src}')">
-                            <span class="badge" style="background:${color}; color:${textColor}">${m._src.toUpperCase()}</span>
+                            <span class="badge" style="background:${color}; color:${m._src==='nguonc'?'#000':'#fff'}">${m._src.toUpperCase()}</span>
                             <img src="${IMG_PROXY + encodeURIComponent(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
                             <p class="card-t">${m.name}</p>
                         </div>
@@ -117,20 +107,19 @@
         async function view(slug, src) {
             try {
                 const apiPath = (src === 'nguonc') ? `film/${slug}` : `phim/${slug}`;
-                const res = await fetch(`${PROXY}${encodeURIComponent(apiPath)}&src=${src}`).then(r => r.json());
-                const movie = res.movie || res.data?.item || res.film;
-                const episodes = res.episodes || res.data?.item.episodes;
+                const res = await fetch(`${PROXY}path=${encodeURIComponent(apiPath)}&src=${src}`).then(r => r.json());
+                const movie = res.movie || res.film || res.data?.item;
+                const episodes = res.episodes || res.data?.item?.episodes;
                 
                 document.getElementById('player').style.display = 'flex';
                 document.getElementById('m-name').innerText = movie.name;
                 
-                const items = (src === 'nguonc') ? episodes[0].items : episodes[0].server_data;
+                const server = episodes[0];
+                const items = server.items || server.server_data;
                 const epDiv = document.getElementById('eps');
-                epDiv.innerHTML = items.map((e, i) => `
-                    <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
-                `).join('');
+                epDiv.innerHTML = items.map((e, i) => `<div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>`).join('');
                 play(items[0].link_embed || items[0].m3u8_url, epDiv.querySelector('.ep'));
-            } catch (e) { alert("Phim cũ này có thể đã bị gỡ link!"); }
+            } catch (e) { alert("Lỗi tải phim!"); }
         }
 
         function play(u, el) { 
@@ -139,14 +128,19 @@
             if(el) el.classList.add('active');
         }
         function closePlayer() { document.getElementById('player').style.display='none'; document.getElementById('vid').src=""; }
-        function search() {
-            const k = document.getElementById('k').value;
-            const y = document.getElementById('y').value;
-            currentParams = `&keyword=${encodeURIComponent(k)}&year=${y}`;
-            currentPage = 1; load(currentParams, 1, false);
+        function triggerSearch() {
+            currentKeyword = document.getElementById('search-input').value.trim();
+            currentPage = 1;
+            loadData(currentKeyword, 1, false);
         }
-        function loadMore() { currentPage++; load(currentParams, currentPage, true); }
-        window.onload = () => load(currentParams, 1);
+        function loadMore() { currentPage++; loadData(currentKeyword, currentPage, true); }
+        
+        // Hỗ trợ nhấn Enter để tìm kiếm
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') triggerSearch();
+        });
+
+        window.onload = () => loadData('', 1);
     </script>
 </body>
 </html>
