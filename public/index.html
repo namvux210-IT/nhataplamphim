@@ -3,65 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | CATEGORIES</title>
+    <title>BLUE-MOVIE | TRIPLE ENGINE</title>
     <style>
-        :root { --main: #00d2ff; --bg: #0a0a0a; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
+        :root { --main: #00d2ff; --bg: #0a0a0a; --ophim: #ff3e3e; --kkphim: #00d2ff; --nguonc: #ffcc00; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; }
-        
-        /* Thanh thể loại */
-        .cats { display: flex; gap: 10px; overflow-x: auto; padding: 15px 5%; scrollbar-width: none; background: #0f0f0f; }
+        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
+        .cats { display: flex; gap: 10px; overflow-x: auto; padding: 15px 5%; background: #0f0f0f; scrollbar-width: none; }
         .cats::-webkit-scrollbar { display: none; }
-        .cat-item { padding: 8px 18px; background: #1a1a1a; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; border: 1px solid #333; transition: 0.3s; }
-        .cat-item:hover, .cat-item.active { background: var(--main); color: #000; border-color: var(--main); font-weight: bold; }
-
-        .search-box { display: flex; gap: 10px; margin: 10px 5% 20px; }
-        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 30px; }
-        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; position: relative; }
+        .cat-item { padding: 8px 18px; background: #1a1a1a; border-radius: 20px; font-size: 13px; cursor: pointer; white-space: nowrap; border: 1px solid #333; }
+        .cat-item.active { background: var(--main); color: #000; font-weight: bold; }
+        .search-box { display: flex; gap: 10px; margin: 15px 5%; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
+        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 0 5% 30px; }
+        .card { background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); border-color: var(--main); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; }
-        .badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 5; }
-        
+        .card-t { padding: 8px; font-size: 12px; text-align: center; margin: 0; font-weight: bold; height: 32px; overflow: hidden; }
+        .badge { position: absolute; top: 5px; left: 5px; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; color: #000; }
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
-        .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
-        .ep { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 8px; background: #111; max-height: 180px; overflow-y: auto; }
+        .ep { padding: 8px 12px; background: #222; border-radius: 4px; cursor: pointer; font-size: 11px; }
         .ep.active { background: var(--main); color: #000; }
     </style>
 </head>
 <body>
     <nav class="nav">
         <a href="/" class="logo">BLUE-MOVIE</a>
-        <div style="font-size: 11px; color: #00ff00;">● OPhim + KKPhim Dual</div>
+        <div style="font-size: 10px; color: #aaa;">Data: OPhim, KKPhim, NguonC</div>
     </nav>
 
-    <div class="cats" id="cat-list">
+    <div class="cats">
         <div class="cat-item active" onclick="changeCat('danh-sach/phim-moi-cap-nhat', this)">Mới nhất</div>
         <div class="cat-item" onclick="changeCat('v1/the-loai/hanh-dong', this)">Hành động</div>
         <div class="cat-item" onclick="changeCat('v1/the-loai/tinh-cam', this)">Tình cảm</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/co-trang', this)">Cổ trang</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/kinh-di', this)">Kinh dị</div>
         <div class="cat-item" onclick="changeCat('v1/the-loai/hoat-hinh', this)">Hoạt hình</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/hai-huoc', this)">Hài hước</div>
-        <div class="cat-item" onclick="changeCat('v1/the-loai/vien-tuong', this)">Viễn tưởng</div>
+        <div class="cat-item" onclick="changeCat('v1/the-loai/kinh-di', this)">Kinh dị</div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm tên phim..." onkeypress="if(event.key==='Enter') search()">
+        <input type="text" id="k" placeholder="Tìm kiếm phim..." onkeypress="if(event.key==='Enter') search()">
         <button onclick="search()">TÌM</button>
     </div>
 
     <div id="grid" class="grid"></div>
-    <button style="display:block; margin: 20px auto 50px; padding: 12px 40px; background: transparent; color: var(--main); border: 2px solid var(--main); border-radius: 30px; cursor: pointer;" onclick="loadMore()">XEM THÊM</button>
+    <button style="display:block; margin: 10px auto 40px; padding: 10px 30px; background: transparent; color: var(--main); border: 1px solid var(--main); border-radius: 20px; cursor: pointer;" onclick="loadMore()">XEM THÊM</button>
 
     <div id="player" class="player">
-        <div style="padding: 15px; display: flex; justify-content: space-between; background: #000; border-bottom: 1px solid #222;">
-            <b id="m-name">...</b>
-            <b onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG X]</b>
+        <div style="padding: 10px 15px; display: flex; justify-content: space-between; align-items:center; background: #000; border-bottom: 1px solid #222;">
+            <span id="m-name" style="font-size:14px; font-weight:bold; color:var(--main)">...</span>
+            <span onclick="closePlayer()" style="color:red; cursor:pointer; font-weight:bold;">ĐÓNG [X]</span>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
@@ -70,94 +63,83 @@
     <script>
         const PROXY = "/api/proxy?path=";
         const IMG_PROXY = "https://images.weserv.nl/?url=";
-        let currentPage = 1;
-        let currentPath = 'danh-sach/phim-moi-cap-nhat';
+        let currentPage = 1, currentPath = 'danh-sach/phim-moi-cap-nhat';
 
         async function load(path, page = 1, append = false) {
             const g = document.getElementById('grid');
-            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Đang lọc phim...</p>';
+            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Đang tải phim từ 3 nguồn...</p>';
             
             try {
-                const [resO, resK] = await Promise.all([
-                    fetch(`${PROXY}${encodeURIComponent(path)}&src=ophim&page=${page}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}${encodeURIComponent(path)}&src=kkphim&page=${page}`).then(r => r.json().catch(() => ({})))
+                const query = path.includes('?') ? `&${path.split('?')[1]}` : '';
+                const cleanPath = path.split('?')[0];
+
+                const [resO, resK, resN] = await Promise.all([
+                    fetch(`${PROXY}${encodeURIComponent(cleanPath)}&src=ophim&page=${page}${query}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}${encodeURIComponent(cleanPath)}&src=kkphim&page=${page}${query}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}${encodeURIComponent(cleanPath)}&src=nguonc&page=${page}${query}`).then(r => r.json().catch(() => ({})))
                 ]);
 
                 const itemsO = (resO.items || resO.data?.items || []).map(i => ({...i, _src: 'ophim'}));
                 const itemsK = (resK.items || resK.data?.items || []).map(i => ({...i, _src: 'kkphim'}));
+                const itemsN = (resN.items || resN.data?.items || []).map(i => ({...i, _src: 'nguonc'}));
 
                 let combined = [];
-                const max = Math.max(itemsO.length, itemsK.length);
-                for(let i=0; i<max; i++) {
+                for(let i=0; i < Math.max(itemsO.length, itemsK.length, itemsN.length); i++) {
                     if(itemsO[i]) combined.push(itemsO[i]);
                     if(itemsK[i]) combined.push(itemsK[i]);
+                    if(itemsN[i]) combined.push(itemsN[i]);
                 }
 
                 if (!append) g.innerHTML = "";
                 g.innerHTML += combined.map(m => {
-                    const imgBase = (m._src === 'ophim') ? "https://img.otruyenapi.com/uploads/movies/" : "https://phimimg.com/";
-                    const thumb = m.thumb_url.includes('http') ? m.thumb_url : imgBase + m.thumb_url;
-                    return `
-                        <div class="card" onclick="view('${m.slug}', '${m._src}')">
-                            <span class="badge" style="background:${m._src==='ophim'?'#ff3e3e':'#00d2ff'}">${m._src.toUpperCase()}</span>
-                            <img src="${IMG_PROXY + encodeURIComponent(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
-                            <p class="card-t">${m.name}</p>
-                        </div>
-                    `;
+                    let thumb = m.thumb_url || m.poster_url;
+                    const imgBase = (m._src==='ophim')?"https://img.otruyenapi.com/uploads/movies/":(m._src==='kkphim')?"https://phimimg.com/":"";
+                    if(thumb && !thumb.includes('http')) thumb = imgBase + thumb;
+                    const color = (m._src==='ophim')?'#ff3e3e':(m._src==='kkphim')?'#00d2ff':'#ffcc00';
+                    return `<div class="card" onclick="view('${m.slug}', '${m._src}')">
+                        <span class="badge" style="background:${color}">${m._src.toUpperCase()}</span>
+                        <img src="${IMG_PROXY+encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
+                        <p class="card-t">${m.name}</p>
+                    </div>`;
                 }).join('');
             } catch (e) { console.error(e); }
         }
 
-        function changeCat(path, el) {
-            document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
-            el.classList.add('active');
-            currentPath = path;
-            currentPage = 1;
-            load(currentPath, 1, false);
-        }
-
-        async function search() {
-            const val = document.getElementById('k').value;
-            if (val) {
-                document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
-                const k = val.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/đ/g, 'd').replace(/\s+/g, '-');
-                currentPath = 'tim-kiem?keyword=' + k;
-                currentPage = 1;
-                load(currentPath, 1, false);
-            }
-        }
-
-        async function loadMore() {
-            currentPage++;
-            load(currentPath, currentPage, true);
-        }
-
         async function view(slug, src) {
             try {
-                const res = await fetch(`${PROXY}${encodeURIComponent('phim/' + slug)}&src=${src}`);
-                const data = await res.json();
-                const movie = data.movie || data.data?.item;
-                const episodes = data.episodes || data.data?.item.episodes;
+                const apiPath = (src === 'nguonc') ? `film/${slug}` : `phim/${slug}`;
+                const res = await fetch(`${PROXY}${encodeURIComponent(apiPath)}&src=${src}`).then(r => r.json());
+                const movie = res.movie || res.data?.item || res.film;
+                const episodes = res.episodes || res.data?.item.episodes;
+                
                 document.getElementById('player').style.display = 'flex';
                 document.getElementById('m-name').innerText = movie.name;
-                const sv = episodes[0].server_data;
+                
+                const items = (src === 'nguonc') ? episodes[0].items : episodes[0].server_data;
                 const epDiv = document.getElementById('eps');
-                epDiv.innerHTML = sv.map((e, i) => `<div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>`).join('');
-                play(sv[0].link_embed, epDiv.querySelector('.ep'));
+                epDiv.innerHTML = items.map((e, i) => `<div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>`).join('');
+                play(items[0].link_embed || items[0].m3u8_url, epDiv.querySelector('.ep'));
             } catch (e) { alert("Lỗi tải phim!"); }
         }
 
-        function play(url, el) {
-            document.getElementById('vid').src = url;
+        function play(u, el) { 
+            document.getElementById('vid').src = u; 
             document.querySelectorAll('.ep').forEach(b => b.classList.remove('active'));
             if(el) el.classList.add('active');
         }
-
-        function closePlayer() {
-            document.getElementById('player').style.display = 'none';
-            document.getElementById('vid').src = "";
+        function closePlayer() { document.getElementById('player').style.display='none'; document.getElementById('vid').src=""; }
+        function changeCat(p, el) { 
+            document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active'); currentPath = p; currentPage = 1; load(p, 1, false); 
         }
-
+        function search() {
+            const v = document.getElementById('k').value;
+            if(v) { 
+                const k = v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/đ/g, 'd').replace(/\s+/g, '-');
+                currentPath = `tim-kiem?keyword=${k}`; currentPage = 1; load(currentPath, 1, false); 
+            }
+        }
+        function loadMore() { currentPage++; load(currentPath, currentPage, true); }
         window.onload = () => load(currentPath, 1);
     </script>
 </body>
