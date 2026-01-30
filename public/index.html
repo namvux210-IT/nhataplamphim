@@ -3,64 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | ADVANCED SEARCH</title>
+    <title>BLUE-MOVIE | ULTIMATE</title>
     <style>
         :root { --main: #00d2ff; --bg: #0a0a0a; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; }
-        .nav { background: #000; padding: 15px; text-align: center; border-bottom: 1px solid #222; }
-        .logo { font-size: 22px; font-weight: 900; color: var(--main); text-decoration: none; }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
         
-        /* Bảng lọc nâng cao */
-        .filter-box { padding: 15px 5%; display: flex; flex-wrap: wrap; gap: 10px; background: #111; }
-        select, input { background: #222; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 5px; outline: none; }
-        input { flex: 1; min-width: 200px; border-color: var(--main); }
-        button { background: var(--main); color: #000; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        /* Navigation */
+        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
+        
+        /* Filter Box */
+        .filter-box { padding: 15px 5%; display: flex; flex-wrap: wrap; gap: 10px; background: #111; border-bottom: 1px solid #222; }
+        .filter-box input { flex: 2; min-width: 200px; }
+        .filter-box select, .filter-box input { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 10px; border-radius: 8px; outline: none; transition: 0.3s; }
+        .filter-box select:focus, .filter-box input:focus { border-color: var(--main); }
+        .btn-search { background: var(--main); color: #000; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 20px 5%; }
-        .card { background: #111; border-radius: 8px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-t { padding: 8px; font-size: 12px; text-align: center; margin: 0; font-weight: bold; height: 32px; overflow: hidden; }
-        .badge { position: absolute; top: 5px; left: 5px; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; color: #000; }
-        
+        /* Movie Grid */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px 5% 40px; }
+        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
+        .card:hover { transform: translateY(-8px); border-color: var(--main); box-shadow: 0 5px 15px rgba(0,210,255,0.2); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
+        .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; color: #000; z-index: 10; }
+
+        /* Player Overlay */
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
-        .eps { padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; background: #111; max-height: 150px; overflow-y: auto; }
-        .ep { padding: 6px 12px; background: #333; border-radius: 4px; cursor: pointer; font-size: 11px; }
-        .ep.active { background: var(--main); color: #000; }
+        .eps { padding: 15px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 200px; overflow-y: auto; }
+        .ep { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; border: 1px solid #333; }
+        .ep.active { background: var(--main); color: #000; font-weight: bold; border-color: var(--main); }
+        .close-btn { color: #ff4444; cursor: pointer; padding: 5px 15px; border: 1px solid #ff4444; border-radius: 5px; font-weight: bold; }
+
+        .more-btn { display: block; margin: 0 auto 50px; padding: 12px 40px; background: transparent; color: var(--main); border: 2px solid var(--main); border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .more-btn:hover { background: var(--main); color: #000; }
     </style>
 </head>
 <body>
-    <nav class="nav"><a href="/" class="logo">BLUE-MOVIE</a></nav>
+    <nav class="nav">
+        <a href="/" class="logo">BLUE-MOVIE</a>
+        <div style="font-size: 11px; color: #00ff00;">● OPhim + KKPhim + NguonC</div>
+    </nav>
 
     <div class="filter-box">
-        <input type="text" id="k" placeholder="Nhập tên phim...">
+        <input type="text" id="k" placeholder="Nhập tên phim cần tìm...">
         <select id="cat">
-            <option value="">Thể loại</option>
+            <option value="">Tất cả thể loại</option>
             <option value="hanh-dong">Hành động</option>
             <option value="tinh-cam">Tình cảm</option>
+            <option value="co-trang">Cổ trang</option>
+            <option value="kinh-di">Kinh dị</option>
             <option value="hoat-hinh">Hoạt hình</option>
+            <option value="hai-huoc">Hài hước</option>
         </select>
         <select id="country">
-            <option value="">Quốc gia</option>
+            <option value="">Tất cả quốc gia</option>
             <option value="trung-quoc">Trung Quốc</option>
             <option value="han-quoc">Hàn Quốc</option>
+            <option value="nhat-ban">Nhật Bản</option>
             <option value="au-my">Âu Mỹ</option>
+            <option value="viet-nam">Việt Nam</option>
         </select>
         <select id="year">
-            <option value="">Năm</option>
+            <option value="">Tất cả năm</option>
             <option value="2024">2024</option>
             <option value="2023">2023</option>
+            <option value="2022">2022</option>
         </select>
-        <button onclick="search()">TÌM KIẾM</button>
+        <button class="btn-search" onclick="search()">TÌM KIẾM</button>
     </div>
 
     <div id="grid" class="grid"></div>
-    <button style="display:block; margin: 0 auto 40px; background:none; color:var(--main); border:1px solid var(--main); padding:10px 30px; border-radius:20px; cursor:pointer;" onclick="loadMore()">TẢI THÊM</button>
+    <button id="more" class="more-btn" onclick="loadMore()">TẢI THÊM PHIM</button>
 
     <div id="player" class="player">
-        <div style="padding:10px; display:flex; justify-content:space-between; background:#000; border-bottom:1px solid #222;">
-            <span id="m-name" style="color:var(--main); font-weight:bold;">...</span>
-            <span onclick="closePlayer()" style="color:red; cursor:pointer;">[ĐÓNG]</span>
+        <div style="padding: 15px; display: flex; justify-content: space-between; align-items:center; background: #000; border-bottom: 1px solid #222;">
+            <b id="m-name" style="color:var(--main); font-size: 16px;">...</b>
+            <div class="close-btn" onclick="closePlayer()">ĐÓNG [X]</div>
         </div>
         <iframe id="vid" allowfullscreen></iframe>
         <div id="eps" class="eps"></div>
@@ -73,14 +92,16 @@
 
         async function load(params, page = 1, append = false) {
             const g = document.getElementById('grid');
-            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang tìm phim theo bộ lọc...</p>';
+            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Hệ thống đang lọc phim từ các nguồn...</p>';
             
             try {
-                // Gọi song song 3 nguồn (KKPhim dùng bộ lọc mới)
+                // Sửa lỗi trắng trang: Nếu không có params thì dùng link 'phim mới', nếu có thì dùng link 'tìm kiếm'
+                const apiPath = params ? "tim-kiem" : "danh-sach/phim-moi-cap-nhat";
+                
                 const [resO, resK, resN] = await Promise.all([
-                    fetch(`${PROXY}tim-kiem&src=ophim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}tim-kiem&src=kkphim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${PROXY}tim-kiem&src=nguonc&page=${page}${params}`).then(r => r.json().catch(() => ({})))
+                    fetch(`${PROXY}${apiPath}&src=ophim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}${apiPath}&src=kkphim&page=${page}${params}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${PROXY}${apiPath}&src=nguonc&page=${page}${params}`).then(r => r.json().catch(() => ({})))
                 ]);
 
                 const itemsO = (resO.items || resO.data?.items || []).map(i => ({...i, _src: 'ophim'}));
@@ -88,36 +109,51 @@
                 const itemsN = (resN.items || resN.data?.items || []).map(i => ({...i, _src: 'nguonc'}));
 
                 let combined = [];
-                for(let i=0; i < Math.max(itemsO.length, itemsK.length, itemsN.length); i++) {
+                const max = Math.max(itemsO.length, itemsK.length, itemsN.length);
+                for(let i=0; i < max; i++) {
                     if(itemsO[i]) combined.push(itemsO[i]);
                     if(itemsK[i]) combined.push(itemsK[i]);
                     if(itemsN[i]) combined.push(itemsN[i]);
                 }
 
                 if (!append) g.innerHTML = "";
+                if (combined.length === 0 && !append) {
+                    g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">Không tìm thấy phim nào phù hợp. Vui lòng thử từ khóa khác!</p>';
+                    return;
+                }
+
                 g.innerHTML += combined.map(m => {
                     let thumb = m.thumb_url || m.poster_url;
                     const imgBase = (m._src==='ophim')?"https://img.otruyenapi.com/uploads/movies/":(m._src==='kkphim')?"https://phimimg.com/":"";
                     if(thumb && !thumb.includes('http')) thumb = imgBase + thumb;
                     const color = (m._src==='ophim')?'#ff3e3e':(m._src==='kkphim')?'#00d2ff':'#ffcc00';
-                    return `<div class="card" onclick="view('${m.slug}', '${m._src}')">
-                        <span class="badge" style="background:${color}">${m._src.toUpperCase()}</span>
-                        <img src="${IMG_PROXY+encodeURIComponent(thumb)}" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
-                        <p class="card-t">${m.name}</p>
-                    </div>`;
+                    return `
+                        <div class="card" onclick="view('${m.slug}', '${m._src}')">
+                            <span class="badge" style="background:${color}">${m._src.toUpperCase()}</span>
+                            <img src="${IMG_PROXY + encodeURIComponent(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/200x300?text=No+Poster'">
+                            <p class="card-t">${m.name}</p>
+                        </div>
+                    `;
                 }).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e); 
+                if(!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:red;">Lỗi kết nối API. Hãy F5 lại trang!</p>';
+            }
         }
 
         function search() {
             currentPage = 1;
-            const k = document.getElementById('k').value;
+            const k = document.getElementById('k').value.trim();
             const cat = document.getElementById('cat').value;
             const country = document.getElementById('country').value;
             const year = document.getElementById('year').value;
             
-            // Tạo chuỗi tham số để gửi qua Proxy
-            currentParams = `&keyword=${encodeURIComponent(k)}&category=${cat}&country=${country}&year=${year}`;
+            // Nếu người dùng không nhập gì, reset về trang chủ
+            if(!k && !cat && !country && !year) {
+                currentParams = '';
+            } else {
+                currentParams = `&keyword=${encodeURIComponent(k)}&category=${cat}&country=${country}&year=${year}`;
+            }
             load(currentParams, 1, false);
         }
 
@@ -127,23 +163,36 @@
                 const res = await fetch(`${PROXY}${encodeURIComponent(apiPath)}&src=${src}`).then(r => r.json());
                 const movie = res.movie || res.data?.item || res.film;
                 const episodes = res.episodes || res.data?.item.episodes;
+                
                 document.getElementById('player').style.display = 'flex';
-                document.getElementById('m-name').innerText = movie.name;
+                document.getElementById('m-name').innerText = `[${src.toUpperCase()}] ${movie.name}`;
+                
                 const items = (src === 'nguonc') ? episodes[0].items : episodes[0].server_data;
-                document.getElementById('eps').innerHTML = items.map((e, i) => `<div class="ep" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>`).join('');
-                play(items[0].link_embed || items[0].m3u8_url, document.querySelector('.ep'));
-            } catch (e) { alert("Lỗi tải phim!"); }
+                const epDiv = document.getElementById('eps');
+                epDiv.innerHTML = items.map((e, i) => `
+                    <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
+                `).join('');
+                play(items[0].link_embed || items[0].m3u8_url, epDiv.querySelector('.ep'));
+            } catch (e) { alert("Lỗi tải thông tin tập phim!"); }
         }
 
         function play(u, el) { 
             document.getElementById('vid').src = u; 
             document.querySelectorAll('.ep').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
+            if(el) el.classList.add('active');
         }
-        function closePlayer() { document.getElementById('player').style.display='none'; document.getElementById('vid').src=""; }
-        function loadMore() { currentPage++; load(currentParams, currentPage, true); }
-        
-        window.onload = () => load('', 1);
+
+        function closePlayer() { 
+            document.getElementById('player').style.display='none'; 
+            document.getElementById('vid').src=""; 
+        }
+
+        function loadMore() { 
+            currentPage++; 
+            load(currentParams, currentPage, true); 
+        }
+
+        window.onload = () => load('', 1); // Tải mặc định khi mở trang
     </script>
 </body>
 </html>
