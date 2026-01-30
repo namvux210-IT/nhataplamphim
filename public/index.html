@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | ULTIMATE</title>
+    <title>BLUE-MOVIE | FINAL VERSION</title>
     <style>
         :root { --main: #00d2ff; --bg: #0a0a0a; }
         body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
@@ -11,14 +11,13 @@
         .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px var(--main); }
         .search-box { display: flex; gap: 10px; margin: 20px 5%; }
         input { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #1a1a1a; color: #fff; outline: none; border: 1px solid var(--main); }
-        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; transition: 0.3s; }
-        button:hover { opacity: 0.8; transform: scale(1.05); }
+        button { padding: 10px 25px; background: var(--main); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #000; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 0 5% 30px; }
         .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.3s; position: relative; }
         .card:hover { transform: translateY(-8px); border-color: var(--main); box-shadow: 0 5px 15px rgba(0,210,255,0.3); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; background: #222; }
         .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; height: 35px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .source-badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 10; }
+        .source-badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 10; color: #fff; }
         .more-btn { display: block; margin: 20px auto 50px; padding: 15px 40px; background: transparent; color: var(--main); border: 2px solid var(--main); border-radius: 30px; font-weight: bold; cursor: pointer; }
         .player { position: fixed; inset: 0; background: #000; z-index: 2000; display: none; flex-direction: column; }
         iframe { width: 100%; flex: 1; border: none; }
@@ -30,16 +29,16 @@
 <body>
     <nav class="nav">
         <a href="/" class="logo">BLUE-MOVIE</a>
-        <div style="font-size: 12px; color: #00ff00; letter-spacing: 1px;">● DUAL-API ACTIVE</div>
+        <div style="font-size: 12px; color: #00ff00;">● OPHIM + KKPHIM DUAL ENGINE</div>
     </nav>
 
     <div class="search-box">
-        <input type="text" id="k" placeholder="Tìm tên phim (không dấu)..." onkeypress="if(event.key==='Enter') search()">
+        <input type="text" id="k" placeholder="Nhập tên phim cần tìm..." onkeypress="if(event.key==='Enter') search()">
         <button onclick="search()">TÌM KIẾM</button>
     </div>
 
     <div id="grid" class="grid"></div>
-    <button id="more" class="more-btn" onclick="loadMore()">XEM THÊM PHIM CŨ</button>
+    <button id="more" class="more-btn" onclick="loadMore()">XEM THÊM KẾT QUẢ</button>
 
     <div id="player" class="player">
         <div style="padding: 15px; display: flex; justify-content: space-between; align-items:center; background: #000; border-bottom: 1px solid #222;">
@@ -56,22 +55,29 @@
         let currentPage = 1;
         let currentPath = 'danh-sach/phim-moi-cap-nhat';
 
+        function toSlug(str) {
+            str = str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+            str = str.replace(/[đĐ]/g, 'd');
+            str = str.replace(/([^0-9a-z-\s])/g, '');
+            str = str.replace(/(\s+)/g, '-');
+            str = str.replace(/-+/g, '-');
+            str = str.replace(/^-+|-+$/g, '');
+            return str;
+        }
+
         async function load(path, page = 1, append = false) {
             const g = document.getElementById('grid');
-            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Đang kết nối server...</p>';
+            if (!append) g.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🔍 Hệ thống đang lục tìm trong kho dữ liệu...</p>';
             
             try {
-                // Gọi song song cả 2 nguồn để tăng tốc
                 const [resO, resK] = await Promise.all([
                     fetch(`${PROXY}${encodeURIComponent(path)}&src=ophim&page=${page}`).then(r => r.json()),
                     fetch(`${PROXY}${encodeURIComponent(path)}&src=kkphim&page=${page}`).then(r => r.json())
                 ]);
 
                 if (!append) g.innerHTML = "";
-                
                 render(resO, 'ophim');
                 render(resK, 'kkphim');
-
             } catch (e) { console.error(e); }
         }
 
@@ -93,18 +99,19 @@
             }).join('');
         }
 
-        async function loadMore() {
-            currentPage++;
-            load(currentPath, currentPage, true);
-        }
-
         async function search() {
-            const k = document.getElementById('k').value;
-            if (k) {
+            const rawK = document.getElementById('k').value;
+            if (rawK) {
+                const k = toSlug(rawK);
                 currentPage = 1;
                 currentPath = 'tim-kiem?keyword=' + encodeURIComponent(k);
                 load(currentPath, 1, false);
             }
+        }
+
+        async function loadMore() {
+            currentPage++;
+            load(currentPath, currentPage, true);
         }
 
         async function view(slug, src) {
@@ -113,17 +120,15 @@
                 const data = await res.json();
                 const movie = data.movie || (data.data && data.data.item);
                 const episodes = data.episodes || (data.data && data.data.item.episodes);
-
                 document.getElementById('player').style.display = 'flex';
                 document.getElementById('m-name').innerText = movie.name;
-                
                 const sv = episodes[0].server_data;
                 const epDiv = document.getElementById('eps');
                 epDiv.innerHTML = sv.map((e, i) => `
                     <div class="ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
                 `).join('');
                 play(sv[0].link_embed, epDiv.querySelector('.ep'));
-            } catch (e) { alert("Lỗi tải phim!"); }
+            } catch (e) { alert("Lỗi tải link phim!"); }
         }
 
         function play(url, el) {
