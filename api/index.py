@@ -11,16 +11,27 @@ def proxy():
     source = request.args.get('src', 'ophim')
     page = request.args.get('page', '1')
     
-    path = path.lstrip('/')
-    # Kết hợp path với page
-    if '?' in path:
-        final_path = f"{path}&page={page}"
-    else:
-        final_path = f"{path}?page={page}"
+    # Xử lý Endpoint cho từng nguồn
+    if source == 'nguonc':
+        base_url = "https://phim.nguonc.com/api"
+        if 'tim-kiem' in path or 'search' in path:
+            keyword = request.args.get('keyword', '')
+            target_url = f"{base_url}/films/search?keyword={keyword}&page={page}"
+        elif 'danh-sach' in path:
+            target_url = f"{base_url}/films/phim-moi-cap-nhat?page={page}"
+        else:
+            target_url = f"{base_url}/{path}"
+    elif source == 'kkphim':
+        base_url = "https://phimapi.com"
+        target_url = f"{base_url}/{path}?page={page}"
+        if 'keyword' in request.args:
+            target_url += f"&keyword={request.args.get('keyword')}"
+    else: # OPhim
+        base_url = "https://ophim1.com/api/v1"
+        target_url = f"{base_url}/{path}?page={page}"
+        if 'keyword' in request.args:
+            target_url += f"&keyword={request.args.get('keyword')}"
 
-    base_url = "https://phimapi.com" if source == 'kkphim' else "https://ophim1.com/api/v1"
-    target_url = f"{base_url}/{final_path}"
-    
     try:
         response = requests.get(target_url, timeout=10)
         data = response.json()
