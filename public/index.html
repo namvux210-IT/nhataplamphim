@@ -3,49 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BLUE-MOVIE | TRIPLE ENGINE</title>
+    <title>BLUE-MOVIE | FIX ALL SOURCES</title>
     <style>
         :root { --main: #00d2ff; --bg: #050505; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
-        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 1000; }
-        .logo { font-size: 22px; font-weight: 900; color: var(--main); text-decoration: none; text-shadow: 0 0 10px rgba(0,210,255,0.5); }
-        .search-container { padding: 20px 5%; display: flex; gap: 10px; background: #0a0a0a; }
-        #search-input { flex: 1; padding: 12px 20px; border-radius: 25px; border: 1px solid #333; background: #151515; color: #fff; outline: none; }
-        #search-input:focus { border-color: var(--main); }
-        .search-btn { background: var(--main); color: #000; border: none; padding: 0 25px; border-radius: 25px; font-weight: bold; cursor: pointer; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 20px 5%; }
-        .card { background: #111; border-radius: 10px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); }
+        body { margin: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; }
+        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 1000; }
+        .logo { font-size: 24px; font-weight: 900; color: var(--main); text-decoration: none; letter-spacing: 2px; }
+        
+        .search-container { padding: 20px 5%; display: flex; gap: 10px; background: #0a0a0a; border-bottom: 1px solid #111; }
+        #search-input { flex: 1; padding: 12px 25px; border-radius: 30px; border: 1px solid #333; background: #151515; color: #fff; outline: none; font-size: 14px; }
+        .search-btn { background: var(--main); color: #000; border: none; padding: 0 30px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .search-btn:hover { opacity: 0.8; transform: scale(1.05); }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px 5%; }
+        .card { background: #111; border-radius: 12px; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.3s; }
+        .card:hover { transform: translateY(-8px); border-color: var(--main); box-shadow: 0 5px 15px rgba(0,210,255,0.2); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-t { padding: 10px; font-size: 13px; text-align: center; margin: 0; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .badge { position: absolute; top: 5px; left: 5px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 10; color: #000; }
-        .player-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; flex-direction: column; }
+        .card-t { padding: 12px 8px; font-size: 13px; text-align: center; margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 10; color: #000; box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+
+        /* PLAYER FIX */
+        .player-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
+        .player-header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; background: #000; }
         iframe { width: 100%; flex: 1; border: none; background: #000; }
-        .episode-list { padding: 20px; display: flex; flex-wrap: wrap; gap: 10px; background: #111; max-height: 250px; overflow-y: auto; }
-        .ep-btn { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; border: 1px solid #333; }
-        .ep-btn.active { background: var(--main); color: #000; border-color: var(--main); }
+        .episode-container { padding: 20px 5%; background: #0a0a0a; border-top: 1px solid #222; max-height: 30%; overflow-y: auto; }
+        .episode-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .ep-btn { padding: 10px 18px; background: #1a1a1a; border-radius: 6px; cursor: pointer; font-size: 12px; border: 1px solid #333; transition: 0.2s; }
+        .ep-btn:hover { border-color: var(--main); }
+        .ep-btn.active { background: var(--main); color: #000; border-color: var(--main); font-weight: bold; }
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/" class="logo">BLUE-MOVIE</a>
-    </nav>
+    <nav class="nav"><a href="/" class="logo">BLUE-MOVIE</a></nav>
 
     <div class="search-container">
-        <input type="text" id="search-input" placeholder="Nhập tên phim bạn muốn tìm...">
+        <input type="text" id="search-input" placeholder="Bạn muốn xem phim gì hôm nay?">
         <button class="search-btn" onclick="doSearch()">TÌM PHIM</button>
     </div>
 
     <div id="grid" class="grid"></div>
-    <button id="load-more" style="display:block; margin: 20px auto 50px; padding: 10px 40px; background:none; border:1px solid var(--main); color:var(--main); border-radius:20px; cursor:pointer;" onclick="loadMore()">TẢI THÊM</button>
+    <button id="load-more" style="display:none; margin: 20px auto 50px; padding: 12px 40px; background:none; border:1px solid var(--main); color:var(--main); border-radius:30px; cursor:pointer;" onclick="loadMore()">XEM THÊM KẾT QUẢ</button>
 
     <div id="player" class="player-overlay">
-        <div style="padding:15px 5%; display:flex; justify-content:space-between; align-items:center; background:#000;">
-            <b id="m-name" style="color:var(--main)">Đang tải...</b>
-            <b onclick="closePlayer()" style="color:#ff4444; cursor:pointer; padding:5px 15px; border:1px solid #ff4444; border-radius:5px;">ĐÓNG X</b>
+        <div class="player-header">
+            <span id="m-name" style="color:var(--main); font-size: 16px; font-weight: bold;">Đang tải...</span>
+            <span onclick="closePlayer()" style="color:#ff4444; cursor:pointer; font-weight:bold; border:1px solid #ff4444; padding:5px 15px; border-radius:20px;">ĐÓNG [X]</span>
         </div>
         <iframe id="video-iframe" allowfullscreen></iframe>
-        <div id="eps" class="episode-list"></div>
+        <div class="episode-container">
+            <div style="margin-bottom:10px; font-size:12px; color:#666;">DANH SÁCH TẬP PHIM:</div>
+            <div id="eps" class="episode-list"></div>
+        </div>
     </div>
 
     <script>
@@ -53,16 +61,17 @@
         const IMG_URL = "https://images.weserv.nl/?url=";
         let currentPage = 1, currentK = '';
 
-        async function loadMovies(keyword = '', page = 1, append = false) {
+        async function fetchMovies(keyword = '', page = 1, append = false) {
             const grid = document.getElementById('grid');
-            if (!append) grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center">🚀 Đang kết nối nguồn phim...</p>';
+            const loadBtn = document.getElementById('load-more');
+            if (!append) grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 50px;">🔍 Đang bới tung các kho phim...</p>';
             
             try {
-                const query = `keyword=${encodeURIComponent(keyword)}&page=${page}`;
+                const q = `keyword=${encodeURIComponent(keyword)}&page=${page}`;
                 const [rO, rK, rN] = await Promise.all([
-                    fetch(`${API_URL}src=ophim&${query}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${API_URL}src=kkphim&${query}`).then(r => r.json().catch(() => ({}))),
-                    fetch(`${API_URL}src=nguonc&${query}`).then(r => r.json().catch(() => ({})))
+                    fetch(`${API_URL}src=ophim&${q}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${API_URL}src=kkphim&${q}`).then(r => r.json().catch(() => ({}))),
+                    fetch(`${API_URL}src=nguonc&${q}`).then(r => r.json().catch(() => ({})))
                 ]);
 
                 const itemsO = (rO.items || rO.data?.items || []).map(i => ({...i, _s: 'ophim'}));
@@ -70,32 +79,37 @@
                 const itemsN = (rN.items || rN.data?.items || rN.data || []).map(i => ({...i, _s: 'nguonc'}));
 
                 let all = [];
-                const maxLen = Math.max(itemsO.length, itemsK.length, itemsN.length);
-                for(let i=0; i<maxLen; i++) {
+                const max = Math.max(itemsO.length, itemsK.length, itemsN.length);
+                for(let i=0; i<max; i++) {
                     if(itemsN[i]) all.push(itemsN[i]);
                     if(itemsK[i]) all.push(itemsK[i]);
                     if(itemsO[i]) all.push(itemsO[i]);
                 }
 
                 if (!append) grid.innerHTML = "";
-                grid.innerHTML += all.map(m => {
-                    let thumb = m.poster_url || m.thumb_url;
-                    const base = (m._s==='ophim')?"https://img.otruyenapi.com/uploads/movies/":(m._s==='kkphim')?"https://phimimg.com/":"";
-                    if(thumb && !thumb.includes('http')) thumb = base + thumb;
-                    const badgeColor = (m._s==='nguonc')?'#ffcc00':(m._s==='kkphim')?'#00d2ff':'#ff3e3e';
-                    
-                    return `
-                        <div class="card" onclick="view('${m.slug}', '${m._s}')">
-                            <span class="badge" style="background:${badgeColor}">${m._s.toUpperCase()}</span>
-                            <img src="${IMG_URL + encodeURIComponent(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
-                            <p class="card-t">${m.name}</p>
-                        </div>
-                    `;
-                }).join('');
+                if(all.length > 0) {
+                    grid.innerHTML += all.map(m => {
+                        let thumb = m.poster_url || m.thumb_url;
+                        const base = (m._s==='ophim')?"https://img.otruyenapi.com/uploads/movies/":(m._s==='kkphim')?"https://phimimg.com/":"";
+                        if(thumb && !thumb.includes('http')) thumb = base + thumb;
+                        const bColor = (m._s==='nguonc')?'#ffcc00':(m._s==='kkphim')?'#00d2ff':'#ff3e3e';
+                        return `
+                            <div class="card" onclick="openMovie('${m.slug}', '${m._s}')">
+                                <span class="badge" style="background:${bColor}">${m._s.toUpperCase()}</span>
+                                <img src="${IMG_URL + encodeURIComponent(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
+                                <p class="card-t">${m.name}</p>
+                            </div>
+                        `;
+                    }).join('');
+                    loadBtn.style.display = 'block';
+                } else if(!append) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 50px;">😢 Không tìm thấy phim bạn yêu cầu.</p>';
+                }
             } catch (e) { console.error(e); }
         }
 
-        async function view(slug, src) {
+        async function openMovie(slug, src) {
+            closePlayer(); // Xóa sạch dữ liệu phim cũ
             try {
                 const path = (src === 'nguonc') ? `film/${slug}` : `phim/${slug}`;
                 const res = await fetch(`${API_URL}path=${encodeURIComponent(path)}&src=${src}`).then(r => r.json());
@@ -109,38 +123,50 @@
                     episodes = res.data?.item?.episodes;
                 }
 
-                if (!episodes || episodes.length === 0) throw new Error();
+                if (!episodes || episodes.length === 0) throw new Error("No episodes found");
 
                 document.getElementById('player').style.display = 'flex';
                 document.getElementById('m-name').innerText = movie.name;
                 
-                const server = episodes[0];
-                const items = server.items || server.server_data;
-                const epDiv = document.getElementById('eps');
+                // Tìm server có dữ liệu
+                const activeServer = episodes.find(s => (s.items || s.server_data)?.length > 0) || episodes[0];
+                const list = activeServer.items || activeServer.server_data;
                 
-                epDiv.innerHTML = items.map((e, i) => `
-                    <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
+                const epDiv = document.getElementById('eps');
+                epDiv.innerHTML = list.map((e, i) => `
+                    <div class="ep-btn ${i===0?'active':''}" onclick="startPlay('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
                 `).join('');
                 
-                play(items[0].link_embed || items[0].m3u8_url, epDiv.querySelector('.ep-btn'));
-            } catch (e) { alert("Phim này hiện không có sẵn link!"); }
+                startPlay(list[0].link_embed || list[0].m3u8_url, epDiv.querySelector('.ep-btn'));
+            } catch (e) {
+                alert("Lỗi: Server nguồn đang gặp sự cố, hãy thử phim khác!");
+            }
         }
 
-        function play(url, el) { 
-            document.getElementById('video-iframe').src = url; 
+        function startPlay(url, btn) {
+            if(!url) return;
+            document.getElementById('video-iframe').src = url;
             document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-            if(el) el.classList.add('active');
+            if(btn) btn.classList.add('active');
         }
-        function closePlayer() { document.getElementById('player').style.display='none'; document.getElementById('video-iframe').src=""; }
+
+        function closePlayer() {
+            document.getElementById('player').style.display = 'none';
+            document.getElementById('video-iframe').src = "";
+            document.getElementById('eps').innerHTML = "";
+            document.getElementById('m-name').innerText = "Đang tải...";
+        }
+
         function doSearch() {
             currentK = document.getElementById('search-input').value.trim();
             currentPage = 1;
-            loadMovies(currentK, 1, false);
+            fetchMovies(currentK, 1, false);
         }
-        function loadMore() { currentPage++; loadMovies(currentK, currentPage, true); }
+
+        function loadMore() { currentPage++; fetchMovies(currentK, currentPage, true); }
         
         document.getElementById('search-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
-        window.onload = () => loadMovies('', 1);
+        window.onload = () => fetchMovies('', 1);
     </script>
 </body>
 </html>
