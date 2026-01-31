@@ -7,36 +7,29 @@ CORS(app)
 
 @app.route('/api/proxy')
 def proxy():
-    source = request.args.get('src', 'kkphim')
+    # Ophim API base
+    base_url = "https://ophim1.com/api/v1"
+    
     path = request.args.get('path', '')
     keyword = request.args.get('keyword', '')
     page = request.args.get('page', '1')
 
-    # GIẢ LẬP TRÌNH DUYỆT VÀ GỬI REFERER ĐỂ KHÔNG BỊ CHẶN VIDEO
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Referer": "https://phimapi.com/",
-        "Origin": "https://phimapi.com"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
     try:
-        if source == 'nguonc':
-            base = "https://phim.nguonc.com/api"
-            # NguonC API: /film/{slug}
-            url = f"{base}/film/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
-        
-        elif source == 'kkphim':
-            base = "https://phimapi.com"
-            # KKPhim API: /phim/{slug}
-            if path:
-                clean_slug = path.split('/')[-1]
-                url = f"{base}/phim/{clean_slug}"
-            elif keyword:
-                url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
-            else:
-                url = f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
-        
-        resp = requests.get(url, headers=headers, timeout=15)
+        if path:
+            # Lấy chi tiết phim: /phim/{slug}
+            url = f"{base_url}/phim/{path}"
+        elif keyword:
+            # Tìm kiếm phim: /tim-kiem?keyword={keyword}
+            url = f"{base_url}/tim-kiem?keyword={keyword}&page={page}"
+        else:
+            # Danh sách phim mới nhất
+            url = f"{base_url}/danh-sach/phim-moi-cap-nhat?page={page}"
+
+        resp = requests.get(url, headers=headers, timeout=10)
         return make_response(jsonify(resp.json()))
     except Exception as e:
         return jsonify({"error": str(e), "status": False})
