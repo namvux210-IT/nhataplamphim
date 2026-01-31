@@ -12,31 +12,27 @@ def proxy():
     page = request.args.get('page', '1')
     keyword = request.args.get('keyword', '')
 
-    # GIẢ LẬP TRÌNH DUYỆT ĐỂ KHÔNG BỊ CHẶN LINK
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Referer": "https://phimapi.com/",
-        "Origin": "https://phimapi.com"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
     try:
         if source == 'nguonc':
             base = "https://phim.nguonc.com/api"
-            url = f"{base}/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
+            # NguonC API Document: /film/{slug}
+            url = f"{base}/film/{path}" if path else (f"{base}/films/search?keyword={keyword}&page={page}" if keyword else f"{base}/films/phim-moi-cap-nhat?page={page}")
+        
         elif source == 'kkphim':
             base = "https://phimapi.com"
+            # KKPhim API Document: /phim/{slug} để lấy dữ liệu tập
             if path:
-                # ÉP ĐÚNG PATH ĐỂ LẤY TẬP PHIM
                 clean_slug = path.split('/')[-1]
                 url = f"{base}/phim/{clean_slug}"
             elif keyword:
                 url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
             else:
                 url = f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
-        else:
-            base = "https://ophim1.com/api/v1"
-            url = f"{base}/{path}" if path else (f"{base}/tim-kiem?keyword={keyword}&page={page}" if keyword else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}")
-
+        
         resp = requests.get(url, headers=headers, timeout=15)
         return make_response(jsonify(resp.json()))
     except Exception as e:
