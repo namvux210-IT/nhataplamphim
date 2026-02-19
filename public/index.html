@@ -2,156 +2,133 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOLD CINEMA - MODERN</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GOLD CINEMA</title>
     <style>
-        :root { --gold: #FFD700; --bg: #0a0a0a; --card-bg: #1a1a1a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; }
-
-        /* Header */
-        .header { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 22px; font-weight: 900; color: var(--gold); cursor: pointer; text-transform: uppercase; }
-        .search-bar { background: #222; border: 1px solid #444; border-radius: 20px; padding: 5px 15px; width: 250px; display: flex; }
-        .search-bar input { background: none; border: none; color: #fff; outline: none; width: 100%; }
+        :root { --gold: #FFD700; --bg: #050505; --card-bg: #111; }
+        body { background: var(--bg); color: #fff; font-family: -apple-system, system-ui, sans-serif; margin: 0; overflow-x: hidden; }
+        
+        /* Header tối giản */
+        .header { background: rgba(0,0,0,0.9); padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 20px; font-weight: 800; color: var(--gold); cursor: pointer; letter-spacing: 1px; }
+        .search { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 6px 12px; color: #fff; width: 160px; outline: none; transition: 0.3s; }
+        .search:focus { border-color: var(--gold); width: 220px; }
 
         /* Movie Grid */
         .container { padding: 20px 5%; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
-        @media (min-width: 768px) { .grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; } }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        @media (min-width: 768px) { .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; } }
 
-        /* Card Style - LUÔN HIỆN TÊN */
-        .movie-card { background: var(--card-bg); border-radius: 10px; overflow: hidden; transition: 0.3s; cursor: pointer; border: 1px solid #333; display: flex; flex-direction: column; }
-        .movie-card:hover { transform: scale(1.05); border-color: var(--gold); box-shadow: 0 5px 15px rgba(255, 215, 0, 0.2); }
+        .card { background: var(--card-bg); border-radius: 6px; overflow: hidden; border: 1px solid #222; cursor: pointer; transition: 0.2s; position: relative; }
+        .card:hover, .card:focus { transform: scale(1.05); border-color: var(--gold); outline: none; z-index: 10; }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .card-name { padding: 8px; font-size: 12px; text-align: center; font-weight: 600; background: #111; color: #ddd; }
+
+        /* Giao diện xem phim tối giản */
+        #watch-view { position: fixed; inset: 0; background: var(--bg); display: none; z-index: 1000; overflow-y: auto; }
+        .watch-header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .watch-content { padding: 20px 5%; max-width: 1200px; margin: 0 auto; }
         
-        .poster-wrapper { position: relative; width: 100%; aspect-ratio: 2/3; background: #000; }
-        .poster-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .player-box { width: 100%; aspect-ratio: 16/9; background: #000; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        .movie-info { margin-top: 20px; }
+        .movie-title { font-size: 22px; color: var(--gold); margin: 0; }
+        .movie-meta { font-size: 13px; color: #888; margin-top: 5px; }
         
-        .movie-title { 
-            padding: 10px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            text-align: center; 
-            color: #eee;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #1a1a1a;
-            border-top: 1px solid #333;
-        }
-        .movie-card:hover .movie-title { color: var(--gold); }
+        .ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 8px; margin-top: 20px; }
+        .ep-btn { padding: 8px; background: #1a1a1a; border: 1px solid #333; color: #fff; border-radius: 4px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+        .ep-btn.active, .ep-btn:focus { background: var(--gold); color: #000; border-color: var(--gold); font-weight: bold; outline: none; }
 
-        /* Modal View */
-        #movie-detail { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 1000; overflow-y: auto; padding: 20px; }
-        .detail-container { max-width: 1000px; margin: 40px auto; display: flex; flex-direction: column; gap: 30px; background: #111; border-radius: 15px; padding: 20px; border: 1px solid var(--gold); }
-        @media (min-width: 768px) { .detail-container { flex-direction: row; padding: 40px; } }
-
-        .detail-poster { width: 100%; max-width: 300px; border-radius: 10px; border: 2px solid var(--gold); align-self: center; }
-        .detail-info { flex: 1; }
-        .btn-play { background: var(--gold); color: #000; padding: 15px 30px; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; width: 100%; margin: 20px 0; transition: 0.2s; }
-        .btn-play:hover { background: #fff; }
-
-        .ep-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
-        .ep-btn { padding: 8px 15px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; cursor: pointer; }
-        .ep-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
-
-        #player { display: none; margin-top: 20px; aspect-ratio: 16/9; width: 100%; border: 1px solid var(--gold); }
-        .close-btn { float: right; color: red; font-weight: bold; cursor: pointer; border: 1px solid red; padding: 5px 15px; border-radius: 5px; }
+        .close-btn { background: #333; border: none; color: #fff; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .close-btn:hover { background: red; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <div class="logo" onclick="location.reload()">GOLD CINEMA</div>
-    <div class="search-bar"><input type="text" id="searchInp" placeholder="Tìm tên phim..."></div>
+    <input type="text" class="search" id="searchInp" placeholder="Tìm phim...">
 </div>
 
 <div class="container">
-    <h2 style="color:var(--gold); margin-bottom:20px;">Phim Mới Nhất</h2>
     <div id="movieGrid" class="grid"></div>
 </div>
 
-<div id="movie-detail">
-    <div class="detail-container">
-        <div style="width: 100%;"><span class="close-btn" onclick="closeDetail()">ĐÓNG X</span></div>
-        <div id="detailContent" style="display: flex; flex-direction: inherit; gap: inherit; width: 100%;"></div>
+<div id="watch-view">
+    <div class="watch-header">
+        <span id="headerName" style="font-weight: bold; color: var(--gold);">ĐANG XEM</span>
+        <button class="close-btn" onclick="closeWatch()">ĐÓNG X</button>
+    </div>
+    <div class="watch-content">
+        <div class="player-box">
+            <iframe id="ifr" allowfullscreen></iframe>
+        </div>
+        <div class="movie-info">
+            <h1 id="mTitle" class="movie-title">Tên Phim</h1>
+            <div id="mMeta" class="movie-meta">Năm • Quốc gia</div>
+            <div id="epList" class="ep-grid"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    let currentVideo = "";
-
-    async function loadList(keyword = '') {
+    async function loadGrid(kw = '') {
         const grid = document.getElementById('movieGrid');
-        grid.innerHTML = '<p>Đang tải dữ liệu...</p>';
-        const url = keyword ? `/api/proxy?keyword=${encodeURIComponent(keyword)}` : `/api/proxy`;
+        grid.innerHTML = '<p style="text-align:center;width:100%">Đang tải...</p>';
+        const url = kw ? `/api/proxy?keyword=${encodeURIComponent(kw)}` : `/api/proxy`;
         
         try {
             const res = await fetch(url).then(r => r.json());
             const items = res.data?.items || [];
             grid.innerHTML = items.map(m => `
-                <div class="movie-card" onclick="showDetail('${m.slug}')">
-                    <div class="poster-wrapper">
-                        <img src="${m.poster_url}" onerror="this.src='https://placehold.co/300x450/111/FFD700?text=GOLD+CINEMA'">
-                    </div>
-                    <div class="movie-title">${m.name}</div>
+                <div class="card" tabindex="0" onclick="watchMovie('${m.slug}')">
+                    <img src="${m.poster_url}" onerror="this.src='https://placehold.co/300x450/111/444?text=GOLD+CINEMA'">
+                    <div class="card-name">${m.name}</div>
                 </div>
             `).join('');
-        } catch(e) { grid.innerHTML = 'Lỗi kết nối API.'; }
+        } catch(e) { grid.innerHTML = 'Lỗi kết nối máy chủ.'; }
     }
 
-    window.showDetail = async function(slug) {
-        const modal = document.getElementById('movie-detail');
-        const content = document.getElementById('detailContent');
-        modal.style.display = 'block';
-        content.innerHTML = '<h3>Đang tải chi tiết...</h3>';
-
+    window.watchMovie = async function(slug) {
+        const view = document.getElementById('watch-view');
+        view.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
         try {
             const res = await fetch(`/api/proxy?path=${slug}`).then(r => r.json());
             const m = res.data.item;
             const eps = m.episodes[0]?.server_data || [];
-            currentVideo = eps[0]?.link_embed || "";
-
-            content.innerHTML = `
-                <img class="detail-poster" src="${m.poster_url}" onerror="this.src='https://placehold.co/300x450/111/FFD700?text=NO+IMAGE'">
-                <div class="detail-info">
-                    <h1 style="color:var(--gold); margin-top:0">${m.name}</h1>
-                    <p style="opacity:0.7">${m.year} • ${m.origin_name} • ${m.time}</p>
-                    <div style="background:#000; padding:15px; border-radius:8px; font-size:14px; line-height:1.6">
-                        ${m.content || 'Nội dung chưa cập nhật.'}
-                    </div>
-                    <button class="btn-play" onclick="watchNow()">XEM PHIM NGAY</button>
-                    <h3>Tập phim:</h3>
-                    <div class="ep-list">
-                        ${eps.map((e, i) => `<button class="ep-btn ${i===0?'active':''}" onclick="changeEp('${e.link_embed}', this)">${e.name}</button>`).join('')}
-                    </div>
-                    <iframe id="player" allowfullscreen></iframe>
-                </div>
-            `;
-        } catch(e) { content.innerHTML = 'Lỗi tải phim.'; }
-    }
-
-    window.watchNow = () => {
-        const p = document.getElementById('player');
-        p.style.display = 'block';
-        p.src = currentVideo;
-        p.scrollIntoView({ behavior: 'smooth' });
+            
+            document.getElementById('mTitle').innerText = m.name;
+            document.getElementById('mMeta').innerText = `${m.year} • ${m.origin_name} • ${m.time}`;
+            document.getElementById('ifr').src = eps[0]?.link_embed || "";
+            
+            const epContainer = document.getElementById('epList');
+            epContainer.innerHTML = eps.map((e, i) => `
+                <button class="ep-btn ${i===0?'active':''}" tabindex="0" onclick="setEp('${e.link_embed}', this)">${e.name}</button>
+            `).join('');
+        } catch(e) { alert('Lỗi tải phim!'); }
     };
 
-    window.changeEp = (url, btn) => {
-        currentVideo = url;
+    window.setEp = (url, btn) => {
+        document.getElementById('ifr').src = url;
         document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if(document.getElementById('player').style.display === 'block') watchNow();
+        window.scrollTo({top: 0, behavior: 'smooth'});
     };
 
-    window.closeDetail = () => {
-        document.getElementById('movie-detail').style.display = 'none';
-        document.getElementById('player').src = "";
+    window.closeWatch = () => {
+        document.getElementById('watch-view').style.display = 'none';
+        document.getElementById('ifr').src = "";
+        document.body.style.overflow = 'auto';
     };
 
-    document.getElementById('searchInp').onkeypress = (e) => { if(e.key === 'Enter') loadList(e.target.value); };
-    window.onload = () => loadList();
+    document.getElementById('searchInp').onkeypress = (e) => { 
+        if(e.key === 'Enter') loadGrid(e.target.value); 
+    };
+
+    window.onload = () => loadGrid();
 </script>
 </body>
 </html>
