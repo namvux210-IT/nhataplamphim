@@ -14,12 +14,12 @@ SOURCES = {
 def fetch_json(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://phimapi.com/"
+        "Referer": "https://phimapi.com/" # Cần thiết cho KKPhim
     }
     try:
         resp = requests.get(url, headers=headers, timeout=10)
         return resp.json()
-    except:
+    except Exception:
         return None
 
 @app.route('/api/movies')
@@ -32,7 +32,7 @@ def handle_request():
     base = SOURCES.get(src)
     if not base: return jsonify({"error": "Invalid source"})
 
-    # Lấy chi tiết phim - Fix logic cho Nguonc và KKPhim
+    # Lấy chi tiết phim
     if path:
         url = f"{base}/film/{path}" if src == "nguonc" else f"{base}/phim/{path}"
         return jsonify(fetch_json(url))
@@ -44,6 +44,6 @@ def handle_request():
         else: url = f"{base}/tim-kiem?keyword={keyword}&page={page}"
         return jsonify(fetch_json(url))
         
-    # Mặc định lấy phim mới
+    # Phim mới cập nhật
     url = f"{base}/films/phim-moi-cap-nhat?page={page}" if src == "nguonc" else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
     return jsonify(fetch_json(url))
