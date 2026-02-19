@@ -11,34 +11,32 @@ SOURCES = {
     "nguonc": "https://phim.nguonc.com/api"
 }
 
-def fetch_data(url):
+def fetch_json(url):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         resp = requests.get(url, headers=headers, timeout=10)
         return resp.json()
-    except: return None
+    except:
+        return None
 
 @app.route('/api/movies')
-def proxy():
+def handle_request():
     src = request.args.get('src', 'ophim')
     path = request.args.get('path', '')
     keyword = request.args.get('keyword', '')
-    page = request.args.get('page', '1')
-
-    base = SOURCES.get(src)
     
-    # Logic lấy chi tiết phim (Sửa lỗi image_8e0d9b.png)
+    base = SOURCES.get(src)
     if path:
+        # Lấy chi tiết phim để trích xuất link embed
         url = f"{base}/film/{path}" if src == "nguonc" else f"{base}/phim/{path}"
-        return jsonify(fetch_data(url))
-
-    # Logic tìm kiếm
+        return jsonify(fetch_json(url))
+    
     if keyword:
-        if src == "nguonc": url = f"{base}/films/search?keyword={keyword}&page={page}"
-        elif src == "kkphim": url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
-        else: url = f"{base}/tim-kiem?keyword={keyword}&page={page}"
-        return jsonify(fetch_data(url))
-
-    # Mặc định lấy danh sách mới cập nhật
-    url = f"{base}/films/phim-moi-cap-nhat?page={page}" if src == "nguonc" else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
-    return jsonify(fetch_data(url))
+        # Tìm kiếm phim từ nguồn tương ứng
+        if src == "nguonc": url = f"{base}/films/search?keyword={keyword}"
+        elif src == "kkphim": url = f"{base}/v1/api/tim-kiem?keyword={keyword}"
+        else: url = f"{base}/tim-kiem?keyword={keyword}"
+        return jsonify(fetch_json(url))
+        
+    url = f"{base}/films/phim-moi-cap-nhat" if src == "nguonc" else f"{base}/danh-sach/phim-moi-cap-nhat"
+    return jsonify(fetch_json(url))
