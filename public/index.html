@@ -3,44 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BossMovie - 3 Nguồn Phim</title>
+    <title>BossMovie - Nguonc & KKPhim Only</title>
     <style>
-        :root { --main: #ffb400; --bg: #050505; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; }
+        :root { --main: #00d2ff; --bg: #080808; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; }
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 100; }
-        .logo { color: var(--main); font-size: 26px; font-weight: 900; text-decoration: none; }
-        .search-box { background: #1a1a1a; border-radius: 20px; padding: 5px 15px; width: 40%; display: flex; border: 1px solid #333; }
+        .logo { color: var(--main); font-size: 26px; font-weight: 900; text-decoration: none; text-transform: uppercase; }
+        .search-box { background: #151515; border-radius: 25px; padding: 8px 20px; width: 35%; display: flex; border: 1px solid #333; }
         .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; padding: 20px 5%; }
-        .card { background: #111; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid #222; position: relative; }
-        .card:hover { transform: translateY(-5px); border-color: var(--main); box-shadow: 0 5px 15px rgba(255,180,0,0.3); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 20px; padding: 25px 5%; }
+        .card { background: #111; border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.4s; border: 1px solid #222; position: relative; }
+        .card:hover { transform: translateY(-8px); border-color: var(--main); box-shadow: 0 10px 20px rgba(0,210,255,0.2); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-name { padding: 10px; font-size: 14px; text-align: center; font-weight: bold; }
-        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.8); color: var(--main); font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
+        .card-name { padding: 12px; font-size: 14px; text-align: center; font-weight: 600; line-height: 1.4; }
+        .badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: var(--main); font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold; border: 1px solid var(--main); }
 
         /* Player Overlay */
         #overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
-        .p-header { padding: 12px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; }
+        .p-header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; border-bottom: 1px solid #222; }
         iframe { width: 100%; height: 70vh; border: none; background: #000; }
-        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; background: var(--bg); }
-        .ep-btn { padding: 10px 20px; background: #222; border-radius: 5px; cursor: pointer; font-size: 13px; border: 1px solid #333; transition: 0.2s; }
+        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 12px; overflow-y: auto; flex: 1; background: #080808; }
+        .ep-btn { padding: 10px 18px; background: #1a1a1a; border-radius: 6px; cursor: pointer; font-size: 13px; border: 1px solid #333; transition: 0.2s; color: #ccc; }
+        .ep-btn:hover { border-color: var(--main); color: #fff; }
         .ep-btn.active { background: var(--main); color: #000; font-weight: bold; border-color: var(--main); }
     </style>
 </head>
 <body>
 
 <nav class="nav">
-    <a href="/" class="logo">BOSSMOVIE</a>
-    <div class="search-box"><input type="text" id="searchInput" placeholder="Tìm phim..."></div>
+    <a href="/" class="logo">BossMovie</a>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Tìm kiếm phim NguonC & KKPhim...">
+    </div>
 </nav>
 
 <div id="grid" class="grid"></div>
 
 <div id="overlay">
     <div class="p-header">
-        <h3 id="mName" style="margin:0; color:var(--main);"></h3>
-        <button onclick="closeP()" style="background:#ff4444; border:none; color:#fff; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">ĐÓNG [X]</button>
+        <h3 id="mName" style="margin:0; color:var(--main); font-size: 1.2rem;"></h3>
+        <button onclick="closeP()" style="background:#e74c3c; border:none; color:#fff; padding:10px 25px; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.3s;">ĐÓNG [X]</button>
     </div>
     <iframe id="pFrame" allowfullscreen></iframe>
     <div id="epList" class="eps"></div>
@@ -49,43 +52,45 @@
 <script>
     async function loadMovies(keyword = '') {
         const grid = document.getElementById('grid');
-        grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Đang tải phim từ 3 nguồn...</p>';
-        const sources = ['ophim', 'kkphim', 'nguonc'];
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 50px;">Đang quét dữ liệu từ 2 nguồn...</div>';
+        const sources = ['kkphim', 'nguonc'];
         let html = '';
 
         for (let src of sources) {
             try {
                 const res = await fetch(`/api/movies?src=${src}&keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
-                const items = res.data?.items || res.items || [];
+                // Xử lý dữ liệu trả về khác nhau giữa 2 nguồn
+                const items = (src === 'kkphim') ? (res.data?.items || []) : (res.items || []);
+                
                 html += items.map(m => `
                     <div class="card" onclick="openMovie('${m.slug}', '${src}')">
-                        <span class="badge">${src.toUpperCase()}</span>
-                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
+                        <span class="badge">${src === 'kkphim' ? 'KKPHIM' : 'NGUONC'}</span>
+                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}" onerror="this.src='https://placehold.co/300x450?text=No+Poster'">
                         <div class="card-name">${m.name}</div>
                     </div>
                 `).join('');
-            } catch (e) {}
+            } catch (e) { console.error("Lỗi nguồn " + src, e); }
         }
-        grid.innerHTML = html || '<p style="grid-column: 1/-1; text-align:center;">Không tìm thấy phim.</p>';
+        grid.innerHTML = html || '<div style="grid-column: 1/-1; text-align:center;">Rất tiếc, không tìm thấy phim bạn yêu cầu.</div>';
     }
 
     async function openMovie(slug, src) {
         document.getElementById('overlay').style.display = 'flex';
         const epDiv = document.getElementById('epList');
         const iframe = document.getElementById('pFrame');
-        epDiv.innerHTML = 'Đang giải mã link phim...';
+        epDiv.innerHTML = '<div style="width:100%; text-align:center;">Đang lấy link phim...</div>';
         iframe.src = "";
 
         try {
             const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
             
-            // Logic bóc tách linh hoạt cho mọi nguồn
-            let movie = (src === 'nguonc') ? res.movie : (res.data?.item || res.movie);
-            let episodes = (src === 'nguonc') ? res.movie.episodes : (res.data?.item?.episodes || res.movie?.episodes);
+            // Logic bóc tách chính xác cho 2 nguồn
+            let movie = (src === 'nguonc') ? res.movie : (res.movie || res.data?.item);
+            let episodes = (src === 'nguonc') ? res.movie.episodes : (res.movie?.episodes || res.data?.item?.episodes);
             
             document.getElementById('mName').innerText = movie.name;
             
-            // Tìm server chứa link embed thực tế
+            // Tìm server khả dụng
             const server = episodes.find(sv => (sv.server_data || sv.items || []).length > 0) || episodes[0];
             const list = server.server_data || server.items || [];
             
@@ -97,12 +102,12 @@
             
             if(list[0]) play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
         } catch (e) {
-            epDiv.innerHTML = '<p style="color:red; text-align:center; width:100%;">Lỗi: Phim này hiện chưa có link từ nguồn ' + src.toUpperCase() + '!</p>';
+            epDiv.innerHTML = '<p style="color:#ff4d4d; text-align:center; width:100%;">Lỗi bóc tách link từ nguồn ' + src.toUpperCase() + '. Có thể phim đang bảo trì!</p>';
         }
     }
 
     function play(url, btn) {
-        if(!url) return alert("Không tìm thấy link embed!");
+        if(!url) return alert("Tập phim chưa có link embed!");
         document.getElementById('pFrame').src = url;
         document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
@@ -110,7 +115,7 @@
 
     function closeP() {
         document.getElementById('overlay').style.display = 'none';
-        document.getElementById('pFrame').src = "";
+        document.getElementById('pFrame').src = ""; // Dọn dẹp để không lag máy
     }
 
     document.getElementById('searchInput').onkeypress = (e) => { if(e.key==='Enter') loadMovies(e.target.value); };
