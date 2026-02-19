@@ -13,10 +13,10 @@ def handle():
     if slug:
         url = f"https://phim.nguonc.com/api/film/{slug}"
     else:
-        # NguonC dùng /films/search theo link mẫu của bạn
+        # NguonC dùng endpoint /films/search cho tìm kiếm
         url = f"https://phim.nguonc.com/api/films/search?keyword={kw}"
     
     try:
         return jsonify(requests.get(url, timeout=10).json())
     except:
-        return jsonify({"data": []})
+        return jsonify({"status": False, "data": []})
