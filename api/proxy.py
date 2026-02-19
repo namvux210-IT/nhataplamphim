@@ -10,26 +10,37 @@ def get_ophim_data(url):
     try:
         r = requests.get(url, headers=headers, timeout=10)
         return r.json() if r.status_code == 200 else None
-    except: return None
+    except:
+        return None
 
 @app.route('/api/proxy')
 def handle():
     slug = request.args.get('path', '').strip()
     kw = request.args.get('keyword', '').strip()
 
+    # TRƯỜNG HỢP: LẤY CHI TIẾT PHIM (Fix lỗi Poster từ link bạn gửi)
     if slug:
-        data = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}")
-        if data and 'data' in data:
-            # Sửa lỗi poster bằng API ảnh TMDB
+        # 1. Lấy thông tin phim cơ bản
+        movie_data = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}")
+        if movie_data and 'data' in movie_data:
+            # 2. Lấy hình ảnh từ endpoint /images bạn cung cấp
             img_res = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}/images")
             if img_res and img_res.get('status'):
-                data['data']['item']['poster_url'] = img_res['data'].get('og_image')
-        return jsonify(data or {"status": False})
+                img_info = img_res.get('data', {})
+                # Gán og_image hoặc poster_url vào dữ liệu trả về
+                movie_data['data']['item']['poster_url'] = img_info.get('og_image') or img_info.get('poster_url')
+        return jsonify(movie_data or {"status": False})
 
+    # TRƯỜNG HỢP: LẤY DANH SÁCH PHIM (Trang chủ hoặc Tìm kiếm)
     url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}" if kw else "https://ophim1.com/v1/api/danh-sach/phim-moi-cap-nhat?page=1"
     data = get_ophim_data(url)
+    
+    # Fix domain ảnh cho trang danh sách
     if data and 'data' in data and 'items' in data['data']:
+        domain = "https://img.phimapi.com/"
         for i in data['data']['items']:
-            if i.get('poster_url') and not str(i['poster_url']).startswith('http'):
-                i['poster_url'] = f"https://img.phimapi.com/{i['poster_url']}"
+            p = i.get('poster_url') or i.get('thumb_url')
+            if p and not str(p).startswith('http'):
+                i['poster_url'] = f"{domain}{p}"
+                
     return jsonify(data or {"status": False})
