@@ -42,70 +42,77 @@
 </div>
 
 <script>
-    let currentSource = 'kkphim';
+    window.currentSource = 'kkphim';
 
-    // Đảm bảo các hàm này được định nghĩa rõ ràng trước khi gọi
+    // Đảm bảo hàm luôn sẵn sàng để tránh ReferenceError
     window.switchSource = function(src) {
-        currentSource = src;
+        window.currentSource = src;
         loadMovies();
     };
 
-    window.closeP = function() {
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('player').src = "";
-    };
-
-    async function loadMovies(kw = '') {
+    async function loadMovies(keyword = '') {
         const grid = document.getElementById('grid');
         grid.innerHTML = '<p style="grid-column:1/-1; text-align:center">Đang tải...</p>';
+        
         try {
-            const res = await fetch(`/api/${currentSource}?keyword=${encodeURIComponent(kw)}`).then(r => r.json());
-            let items = (currentSource === 'nguonc') ? (res.data || []) : (res.data?.items || res.items || []);
+            const res = await fetch(`/api/${window.currentSource}?keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
             
+            let items = [];
+            // PHÂN TÁCH DỰA TRÊN LINK MẪU BẠN CUNG CẤP
+            if (window.currentSource === 'nguonc') {
+                // Link NguonC trả về danh sách trong mảng data
+                items = res.data || []; 
+            } else {
+                // KKPhim và Ophim trả về trong data.items
+                items = res.data?.items || []; 
+            }
+
             if (items.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center">Không tìm thấy phim!</p>';
+                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center">Không tìm thấy phim.</p>';
                 return;
             }
 
             grid.innerHTML = items.map(m => {
                 let img = m.poster_url || m.thumb_url || "";
                 if (img && !img.includes('http')) img = `https://phimimg.com/${img}`;
-                return `<div class="card" onclick="openMovie('${m.slug}')">
-                    <img src="${img}" onerror="this.src='https://placehold.co/200x300?text=No+Img'">
-                    <div style="padding:8px; font-size:12px">${m.name}</div>
-                </div>`;
+                return `
+                    <div class="card" onclick="openMovie('${m.slug}')">
+                        <img src="${img}" onerror="this.src='https://placehold.co/200x300?text=Lỗi+Ảnh'">
+                        <div style="padding:10px; font-size:12px; font-weight:bold">${m.name}</div>
+                    </div>`;
             }).join('');
-        } catch(e) { grid.innerHTML = 'Lỗi kết nối API!'; }
+        } catch (e) {
+            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color:red">Lỗi kết nối API Proxy!</p>';
+        }
     }
 
     window.openMovie = async function(slug) {
         document.getElementById('overlay').style.display = 'flex';
         const epDiv = document.getElementById('epList');
         epDiv.innerHTML = 'Đang tải tập phim...';
+        
         try {
-            const res = await fetch(`/api/${currentSource}?path=${slug}`).then(r => r.json());
-            let movie = (currentSource === 'nguonc') ? res.movie : (res.movie || res.data?.item);
+            const res = await fetch(`/api/${window.currentSource}?path=${slug}`).then(r => r.json());
+            
+            // Bóc tách dữ liệu chi tiết
+            let movie = (window.currentSource === 'nguonc') ? res.movie : (res.movie || res.data?.item);
             let episodes = movie.episodes || [];
             
             document.getElementById('mName').innerText = movie.name;
+
+            // Tìm server chứa link tập phim
             const server = episodes.find(s => (s.items || s.server_data || []).length > 0) || episodes[0];
             const list = server.items || server.server_data || [];
 
             epDiv.innerHTML = list.map((e, i) => `
                 <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
             `).join('');
+
             if(list[0]) play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
-        } catch(e) { epDiv.innerHTML = 'Lỗi bóc tách link phim!'; }
+        } catch (e) {
+            epDiv.innerHTML = '<p style="color:red; text-align:center; width:100%">Nguồn này đang bảo trì phim này!</p>';
+        }
     };
-
-    window.play = function(url, btn) {
-        document.getElementById('player').src = url;
-        document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-    };
-
-    document.getElementById('search').onkeypress = (e) => { if(e.key === 'Enter') loadMovies(e.target.value); };
-    window.onload = () => loadMovies();
 </script>
 </body>
 </html>
