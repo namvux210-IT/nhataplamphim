@@ -2,108 +2,182 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GOLD CINEMA - OPHIM PREMIUM</title>
     <style>
-        :root { --gold: #FFD700; --dark: #080808; }
-        body { background: var(--dark); color: #fff; font-family: sans-serif; margin: 0; }
-        .header { background: #000; padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
-        .search-input { background: #1a1a1a; border: 1px solid var(--gold); color: #fff; padding: 10px 20px; border-radius: 25px; width: 350px; outline: none; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 30px; padding: 30px 5%; }
-        .card { background: #111; border-radius: 12px; overflow: hidden; border: 2px solid #222; transition: 0.3s; cursor: pointer; }
-        .card:hover, .card:focus { transform: scale(1.08); border-color: var(--gold); outline: none; box-shadow: 0 0 20px rgba(255,215,0,0.3); }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-name { padding: 15px; text-align: center; font-weight: bold; color: var(--gold); }
+        :root { --gold: #FFD700; --dark: #080808; --card-bg: #111; }
+        body { background: var(--dark); color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; overflow-x: hidden; }
         
+        /* Header & Logo */
+        .header { background: #000; padding: 20px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
+        
+        .logo-btn { 
+            color: var(--gold); 
+            margin: 0; 
+            font-size: 28px; 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            user-select: none;
+            outline: none;
+            text-transform: uppercase;
+        }
+        .logo-btn:hover, .logo-btn:focus { 
+            transform: scale(1.05);
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        /* Search Box */
+        .search-container { background: #1a1a1a; border: 1px solid var(--gold); border-radius: 25px; padding: 10px 20px; width: 350px; display: flex; align-items: center; }
+        .search-container:focus-within { box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .search-input { background: none; border: none; color: #fff; width: 100%; outline: none; font-size: 16px; }
+
+        /* Movie Grid */
+        .container { padding: 30px 5%; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 30px; }
+        .card { background: var(--card-bg); border-radius: 12px; overflow: hidden; border: 2px solid #222; transition: 0.3s; cursor: pointer; position: relative; }
+        .card:hover, .card:focus { transform: scale(1.08); border-color: var(--gold); outline: none; z-index: 10; box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .card-name { padding: 15px; text-align: center; font-weight: bold; color: var(--gold); font-size: 14px; }
+
         /* Player Overlay */
-        #overlay { position: fixed; inset: 0; background: #000; display: none; flex-direction: column; z-index: 999; }
-        iframe { width: 100%; height: 75vh; border: none; }
-        .ep-list { padding: 20px; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; background: #080808; }
-        .btn-ep { padding: 10px 20px; background: #222; border: 1px solid var(--gold); color: #fff; border-radius: 5px; cursor: pointer; }
+        #player-overlay { position: fixed; inset: 0; background: #000; display: none; flex-direction: column; z-index: 1000; }
+        .player-head { padding: 15px 25px; background: #111; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gold); }
+        iframe { width: 100%; height: 70vh; border: none; background: #000; }
+        .ep-list { padding: 20px; display: flex; flex-wrap: wrap; gap: 12px; overflow-y: auto; background: var(--dark); }
+        .btn-ep { padding: 12px 22px; background: #1a1a1a; border: 1px solid var(--gold); color: #fff; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .btn-ep.active { background: var(--gold); color: #000; font-weight: bold; }
+        .btn-close { background: #ff4444; color: #fff; border: none; padding: 10px 25px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
+        /* Toast Notification */
+        #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 10px 20px; border-radius: 5px; font-weight: bold; display: none; z-index: 2000; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1 style="color: var(--gold); margin:0;">GOLD CINEMA</h1>
-    <input type="text" id="searchInput" class="search-input" placeholder="Tìm phim (không dấu OK)...">
-</div>
-
-<div id="movieGrid" class="grid"></div>
-
-<div id="overlay">
-    <div style="padding: 15px; display: flex; justify-content: space-between; align-items: center; background: #111;">
-        <span id="curName" style="color: var(--gold); font-weight: bold;"></span>
-        <button onclick="closeP()" style="background:red; color:#fff; border:none; padding:10px 25px; border-radius:5px; cursor:pointer;">ĐÓNG [X]</button>
+    <h1 class="logo-btn" tabindex="0" id="main-logo" onclick="goHome()">GOLD CINEMA</h1>
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Tìm phim (không dấu cũng được)...">
     </div>
-    <iframe id="videoPlayer" allowfullscreen></iframe>
-    <div id="episodes" class="ep-list"></div>
 </div>
+
+<div class="container">
+    <h2 id="sectionTitle" style="margin-bottom: 25px; color: #fff;">Phim Mới Cập Nhật</h2>
+    <div id="movieGrid" class="grid"></div>
+</div>
+
+<div id="player-overlay">
+    <div class="player-head">
+        <span id="currentMovieName" style="color: var(--gold); font-size: 18px; font-weight: bold;"></span>
+        <button class="btn-close" onclick="closePlayer()">ĐÓNG [BACK]</button>
+    </div>
+    <iframe id="videoIframe" allowfullscreen></iframe>
+    <div id="episodeList" class="ep-list"></div>
+</div>
+
+<div id="toast">Đang tải trang chủ...</div>
 
 <script>
-    // Hàm chuẩn hóa tìm kiếm không dấu
-    const formatStr = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+    // Chuẩn hóa tìm kiếm không dấu cho Android TV
+    const clearText = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
 
-    async function loadData(kw = '') {
+    // Hàm hiển thị thông báo nhanh
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 2000);
+    }
+
+    // Hàm Quay về trang chủ
+    window.goHome = function() {
+        showToast("Đang tải lại trang chủ...");
+        document.getElementById('searchInput').value = "";
+        document.getElementById('sectionTitle').innerText = "Phim Mới Cập Nhật";
+        loadMovies();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Tải danh sách phim qua Proxy Python
+    async function loadMovies(kw = '') {
         const grid = document.getElementById('movieGrid');
-        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center">Đang tải phim...</p>';
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Vui lòng đợi Gold Cinema giây lát...</p>';
+        
         try {
             const res = await fetch(`/api/proxy?keyword=${encodeURIComponent(kw)}`).then(r => r.json());
             const items = res.data?.items || [];
             
             if (items.length === 0) {
-                grid.innerHTML = '<p style="grid-column:1/-1;text-align:center">Không tìm thấy phim phù hợp!</p>';
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Không tìm thấy phim phù hợp trên hệ thống!</p>';
                 return;
             }
 
             grid.innerHTML = items.map(m => `
-                <div class="card" tabindex="0" onclick="openP('${m.slug}')">
+                <div class="card" tabindex="0" onclick="openMovie('${m.slug}')">
                     <img src="${m.poster_url}" onerror="this.src='https://placehold.co/300x450/000/FFD700?text=GOLD+CINEMA'">
                     <div class="card-name">${m.name}</div>
                 </div>
             `).join('');
         } catch (e) {
-            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:red">Lỗi kết nối máy chủ API!</p>';
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Lỗi kết nối máy chủ Proxy. Vui lòng kiểm tra lại cấu hình Vercel!</p>';
         }
     }
 
-    window.openP = async function(slug) {
-        document.getElementById('overlay').style.display = 'flex';
-        const epDiv = document.getElementById('episodes');
-        epDiv.innerHTML = 'Đang lấy link phát...';
+    // Mở chi tiết phim và lấy link tập phim
+    window.openMovie = async function(slug) {
+        document.getElementById('player-overlay').style.display = 'flex';
+        const epDiv = document.getElementById('episodeList');
+        epDiv.innerHTML = 'Đang trích xuất link phát...';
         
         try {
             const res = await fetch(`/api/proxy?path=${slug}`).then(r => r.json());
             const movie = res.data.item;
-            document.getElementById('curName').innerText = movie.name;
+            document.getElementById('currentMovieName').innerText = movie.name;
 
-            const list = movie.episodes[0]?.server_data || [];
-            epDiv.innerHTML = list.map((e, i) => `
-                <button class="btn-ep ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</button>
+            const episodes = movie.episodes[0]?.server_data || [];
+            if (episodes.length === 0) {
+                epDiv.innerHTML = '<p style="color:red">Link phim đang được bảo trì, vui lòng quay lại sau!</p>';
+                return;
+            }
+
+            epDiv.innerHTML = episodes.map((e, i) => `
+                <button class="btn-ep ${i===0?'active':''}" onclick="playVideo('${e.link_embed}', this)">Tập ${e.name}</button>
             `).join('');
 
-            if(list[0]) play(list[0].link_embed, epDiv.querySelector('.btn-ep'));
+            if(episodes[0]) playVideo(episodes[0].link_embed, epDiv.querySelector('.btn-ep'));
         } catch (e) {
-            epDiv.innerHTML = 'Phim đang bảo trì link nhúng!';
+            epDiv.innerHTML = 'Lỗi hệ thống khi lấy link phim!';
         }
     };
 
-    window.play = (url, btn) => {
-        document.getElementById('videoPlayer').src = url;
+    window.playVideo = (url, btn) => {
+        document.getElementById('videoIframe').src = url;
         document.querySelectorAll('.btn-ep').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        if(btn) btn.classList.add('active');
     };
 
-    window.closeP = () => {
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('videoPlayer').src = "";
+    window.closePlayer = () => {
+        document.getElementById('player-overlay').style.display = 'none';
+        document.getElementById('videoIframe').src = "";
     };
 
+    // Lắng nghe sự kiện tìm kiếm
     document.getElementById('searchInput').onkeypress = (e) => {
-        if(e.key === 'Enter') loadData(formatStr(e.target.value));
+        if(e.key === 'Enter') {
+            const val = e.target.value;
+            document.getElementById('sectionTitle').innerText = `Kết quả tìm kiếm: ${val}`;
+            loadMovies(clearText(val));
+        }
     };
 
-    window.onload = () => loadData();
+    // Hỗ trợ Remote Android TV cho Logo
+    document.getElementById('main-logo').onkeydown = (e) => {
+        if(e.key === 'Enter') goHome();
+    };
+
+    window.onload = () => loadMovies();
 </script>
 </body>
 </html>
