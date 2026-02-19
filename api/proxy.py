@@ -9,49 +9,44 @@ def get_ophim_data(url):
     headers = {"accept": "application/json", "User-Agent": "Mozilla/5.0"}
     try:
         r = requests.get(url, headers=headers, timeout=10)
-        return r.json()
+        return r.json() if r.status_code == 200 else None
     except:
         return None
 
 @app.route('/api/proxy')
 def handle():
-    # Lấy và làm sạch tham số để tránh lỗi 404
+    # Lấy và làm sạch tham số đầu vào
     slug = request.args.get('path', '').strip()
     kw = request.args.get('keyword', '').strip()
     cat = request.args.get('category', '').strip()
-    genres = request.args.get('genres', '').strip()
 
-    # Xây dựng URL API chuẩn
-    if genres: 
-        url = "https://ophim1.com/v1/api/the-loai"
-    elif cat: 
-        url = f"https://ophim1.com/v1/api/the-loai/{cat}"
-    elif slug: 
-        url = f"https://ophim1.com/v1/api/phim/{slug}"
-    elif kw: 
+    # TRƯỜNG HỢP 1: LẤY CHI TIẾT PHIM (Dùng slug)
+    if slug:
+        data = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}")
+        if data and 'data' in data:
+            # Sửa lỗi poster: Gọi endpoint chuyên dụng
+            img_res = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}/images")
+            if img_res and img_res.get('status'):
+                img_info = img_res.get('data', {})
+                # Ưu tiên lấy og_image vì nó thường chứa link đầy đủ
+                data['data']['item']['poster_url'] = img_info.get('og_image') or img_info.get('poster_url')
+        return jsonify(data or {"status": False})
+
+    # TRƯỜNG HỢP 2: LẤY DANH SÁCH (Trang chủ / Tìm kiếm / Thể loại)
+    if kw:
         url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}"
-    else: 
+    elif cat:
+        url = f"https://ophim1.com/v1/api/the-loai/{cat}"
+    else:
         url = "https://ophim1.com/v1/api/danh-sach/phim-moi-cap-nhat?page=1"
 
     data = get_ophim_data(url)
-    if not data: return jsonify({"status": False, "msg": "API Error"})
-
-    # Xử lý Poster cho trang chi tiết phim
-    if slug and 'data' in data and 'item' in data['data']:
-        img_res = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}/images")
-        if img_res and img_res.get('status'):
-            img_info = img_res.get('data', {})
-            # Sử dụng og_image nếu có, vì nó luôn có domain đầy đủ
-            data['data']['item']['poster_url'] = img_info.get('og_image') or img_info.get('poster_url')
-
-    # Xử lý domain ảnh cho danh sách ngoài trang chủ
-    domain = "https://img.phimapi.com/"
-    if 'data' in data and 'items' in data['data']:
+    if data and 'data' in data and 'items' in data['data']:
+        domain = "https://img.phimapi.com/"
         for i in data['data']['items']:
-            poster = i.get('poster_url') or i.get('thumb_url')
-            if poster and not str(poster).startswith('http'):
-                i['poster_url'] = f"{domain}{poster}"
-            else:
-                i['poster_url'] = poster
+            # Sửa lỗi domain poster cho danh sách ngoài trang chủ
+            p = i.get('poster_url') or i.get('thumb_url')
+            if p and not str(p).startswith('http'):
+                i['poster_url'] = f"{domain}{p}"
                 
-    return jsonify(data)
+    return jsonify(data or {"status": False})
