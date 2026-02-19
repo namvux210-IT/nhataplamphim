@@ -17,18 +17,22 @@ def handle():
     slug = request.args.get('path', '').strip()
     kw = request.args.get('keyword', '').strip()
 
+    # XỬ LÝ CHI TIẾT PHIM: Chỉ gửi slug để tránh lỗi 404
     if slug:
         data = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}")
         if data and 'data' in data:
-            # Lấy ảnh chuẩn có đầy đủ domain
+            # Lấy ảnh chuẩn có đầy đủ domain từ endpoint /images
             img_res = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}/images")
             if img_res and img_res.get('status'):
                 img_info = img_res.get('data', {})
                 data['data']['item']['poster_url'] = img_info.get('og_image') or img_info.get('poster_url')
         return jsonify(data or {"status": False})
 
+    # XỬ LÝ DANH SÁCH: Tìm kiếm hoặc Phim mới
     url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}" if kw else "https://ophim1.com/v1/api/danh-sach/phim-moi-cap-nhat?page=1"
     data = get_ophim_data(url)
+    
+    # Tự động gán domain cho poster ngoài danh sách để tránh "IMAGE ERROR"
     if data and 'data' in data and 'items' in data['data']:
         domain = "https://img.phimapi.com/"
         for i in data['data']['items']:
