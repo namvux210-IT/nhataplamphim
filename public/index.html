@@ -3,38 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BossMovie - Fixed Sources</title>
+    <title>BossMovie - 3 Nguồn Phim</title>
     <style>
-        :root { --main: #ffb400; --bg: #0a0a0a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; }
+        :root { --main: #ffb400; --bg: #050505; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; }
         .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 100; }
-        .logo { color: var(--main); font-size: 24px; font-weight: 900; text-decoration: none; }
-        .search-box { display: flex; background: #1a1a1a; border-radius: 20px; padding: 5px 15px; width: 40%; border: 1px solid #333; }
-        .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; padding: 5px; }
+        .logo { color: var(--main); font-size: 26px; font-weight: 900; text-decoration: none; }
+        .search-box { background: #1a1a1a; border-radius: 20px; padding: 5px 15px; width: 40%; display: flex; border: 1px solid #333; }
+        .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px 5%; }
-        .card { background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid #222; position: relative; }
-        .card:hover { transform: scale(1.05); border-color: var(--main); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; padding: 20px 5%; }
+        .card { background: #111; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid #222; position: relative; }
+        .card:hover { transform: translateY(-5px); border-color: var(--main); box-shadow: 0 5px 15px rgba(255,180,0,0.3); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-name { padding: 10px; font-size: 13px; text-align: center; font-weight: bold; }
-        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.8); color: var(--main); font-size: 10px; padding: 3px 7px; border-radius: 4px; }
+        .card-name { padding: 10px; font-size: 14px; text-align: center; font-weight: bold; }
+        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.8); color: var(--main); font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
 
-        /* Player UI */
-        #overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
-        .p-header { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; }
-        iframe { width: 100%; height: 65vh; border: none; background: #000; }
-        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; }
-        .ep-btn { padding: 8px 15px; background: #222; border-radius: 4px; cursor: pointer; font-size: 12px; border: 1px solid #333; }
-        .ep-btn.active { background: var(--main); color: #000; font-weight: bold; }
+        /* Player Overlay */
+        #overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
+        .p-header { padding: 12px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; }
+        iframe { width: 100%; height: 70vh; border: none; background: #000; }
+        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; background: var(--bg); }
+        .ep-btn { padding: 10px 20px; background: #222; border-radius: 5px; cursor: pointer; font-size: 13px; border: 1px solid #333; transition: 0.2s; }
+        .ep-btn.active { background: var(--main); color: #000; font-weight: bold; border-color: var(--main); }
     </style>
 </head>
 <body>
 
 <nav class="nav">
     <a href="/" class="logo">BOSSMOVIE</a>
-    <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Tìm phim từ 3 nguồn...">
-    </div>
+    <div class="search-box"><input type="text" id="searchInput" placeholder="Tìm phim..."></div>
 </nav>
 
 <div id="grid" class="grid"></div>
@@ -42,7 +40,7 @@
 <div id="overlay">
     <div class="p-header">
         <h3 id="mName" style="margin:0; color:var(--main);"></h3>
-        <button onclick="closeP()" style="background:#ff4444; border:none; color:#fff; padding:8px 15px; border-radius:5px; cursor:pointer;">ĐÓNG</button>
+        <button onclick="closeP()" style="background:#ff4444; border:none; color:#fff; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">ĐÓNG [X]</button>
     </div>
     <iframe id="pFrame" allowfullscreen></iframe>
     <div id="epList" class="eps"></div>
@@ -51,7 +49,7 @@
 <script>
     async function loadMovies(keyword = '') {
         const grid = document.getElementById('grid');
-        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center">Đang tìm kiếm...</p>';
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Đang tải phim từ 3 nguồn...</p>';
         const sources = ['ophim', 'kkphim', 'nguonc'];
         let html = '';
 
@@ -62,43 +60,49 @@
                 html += items.map(m => `
                     <div class="card" onclick="openMovie('${m.slug}', '${src}')">
                         <span class="badge">${src.toUpperCase()}</span>
-                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}">
+                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
                         <div class="card-name">${m.name}</div>
                     </div>
                 `).join('');
             } catch (e) {}
         }
-        grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center">Không có kết quả.</p>';
+        grid.innerHTML = html || '<p style="grid-column: 1/-1; text-align:center;">Không tìm thấy phim.</p>';
     }
 
     async function openMovie(slug, src) {
         document.getElementById('overlay').style.display = 'flex';
         const epDiv = document.getElementById('epList');
-        epDiv.innerHTML = 'Đang tải tập phim...';
-        
+        const iframe = document.getElementById('pFrame');
+        epDiv.innerHTML = 'Đang giải mã link phim...';
+        iframe.src = "";
+
         try {
             const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
             
-            // Fix logic phân loại dữ liệu từng nguồn
+            // Logic bóc tách linh hoạt cho mọi nguồn
             let movie = (src === 'nguonc') ? res.movie : (res.data?.item || res.movie);
             let episodes = (src === 'nguonc') ? res.movie.episodes : (res.data?.item?.episodes || res.movie?.episodes);
             
             document.getElementById('mName').innerText = movie.name;
             
+            // Tìm server chứa link embed thực tế
             const server = episodes.find(sv => (sv.server_data || sv.items || []).length > 0) || episodes[0];
             const list = server.server_data || server.items || [];
             
+            if (!list.length) throw new Error("Link not found");
+
             epDiv.innerHTML = list.map((e, i) => `
                 <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
             `).join('');
             
             if(list[0]) play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
         } catch (e) {
-            epDiv.innerHTML = '<p style="color:red">Lỗi bóc tách link từ nguồn này!</p>';
+            epDiv.innerHTML = '<p style="color:red; text-align:center; width:100%;">Lỗi: Phim này hiện chưa có link từ nguồn ' + src.toUpperCase() + '!</p>';
         }
     }
 
     function play(url, btn) {
+        if(!url) return alert("Không tìm thấy link embed!");
         document.getElementById('pFrame').src = url;
         document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
