@@ -22,6 +22,7 @@ def handle():
     cat = request.args.get('category', '')
     genres = request.args.get('genres', '')
 
+    # 1. Định nghĩa URL chính
     if genres: url = "https://ophim1.com/v1/api/the-loai"
     elif cat: url = f"https://ophim1.com/v1/api/the-loai/{cat}"
     elif slug: url = f"https://ophim1.com/v1/api/phim/{slug}"
@@ -31,20 +32,21 @@ def handle():
     data = get_ophim_data(url)
     if not data: return jsonify({"status": False})
 
-    # FIX LỖI POSTER TRIỆT ĐỂ
-    domain = "https://img.phimapi.com/"
-    def fix_url(url_str):
-        if not url_str: return ""
-        if str(url_str).startswith('http'): return url_str
-        return f"{domain}{url_str}"
+    # 2. Xử lý ảnh bằng endpoint /images nếu là chi tiết phim [Sửa lỗi poster]
+    if slug and 'data' in data:
+        img_url = f"https://ophim1.com/v1/api/phim/{slug}/images"
+        img_data = get_ophim_data(img_url)
+        if img_data and img_data.get('status'):
+            # Ưu tiên lấy ảnh từ endpoint images chuyên dụng
+            data['data']['item']['poster_url'] = img_data['data'].get('poster_url')
+            data['data']['item']['thumb_url'] = img_data['data'].get('thumb_url')
 
+    # 3. Fix domain ảnh dự phòng cho danh sách ngoài trang chủ
+    domain = "https://img.phimapi.com/"
     if 'data' in data:
         items = data['data'].get('items', [])
-        item = data['data'].get('item')
-        if items:
-            for i in items:
-                i['poster_url'] = fix_url(i.get('poster_url') or i.get('thumb_url'))
-        if item:
-            item['poster_url'] = fix_url(item.get('poster_url') or item.get('thumb_url'))
+        for i in items:
+            if i.get('poster_url') and not str(i['poster_url']).startswith('http'):
+                i['poster_url'] = f"{domain}{i['poster_url']}"
                 
     return jsonify(data)
