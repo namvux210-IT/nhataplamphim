@@ -1,50 +1,116 @@
-async function openM(slug, src) {
-    const overlay = document.getElementById('overlay');
-    const epDiv = document.getElementById('eps');
-    const iframe = document.getElementById('embed-player');
-    
-    overlay.style.display = 'flex';
-    epDiv.innerHTML = '<p>Đang bóc tách dữ liệu từ ' + src.toUpperCase() + '...</p>';
-    iframe.src = ""; 
-
-    try {
-        const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BossMovie - Fixed Sources</title>
+    <style>
+        :root { --main: #ffb400; --bg: #0a0a0a; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; }
+        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 100; }
+        .logo { color: var(--main); font-size: 24px; font-weight: 900; text-decoration: none; }
+        .search-box { display: flex; background: #1a1a1a; border-radius: 20px; padding: 5px 15px; width: 40%; border: 1px solid #333; }
+        .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; padding: 5px; }
         
-        let movie, episodes;
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 20px 5%; }
+        .card { background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid #222; position: relative; }
+        .card:hover { transform: scale(1.05); border-color: var(--main); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .card-name { padding: 10px; font-size: 13px; text-align: center; font-weight: bold; }
+        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.8); color: var(--main); font-size: 10px; padding: 3px 7px; border-radius: 4px; }
 
-        // PHÂN LOẠI LOGIC CHO TỪNG NGUỒN
-        if (src === 'nguonc') {
-            movie = res.movie;
-            episodes = res.movie.episodes;
-        } else if (src === 'kkphim') {
-            // KKPhim đôi khi trả về cấu trúc giống Ophim nhưng nằm trong data.item
-            movie = res.movie || res.data?.item;
-            episodes = (res.movie ? res.movie.episodes : res.data?.item?.episodes) || [];
-        } else {
-            // Ophim chuẩn
-            movie = res.data.item;
-            episodes = res.data.item.episodes;
+        /* Player UI */
+        #overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
+        .p-header { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; }
+        iframe { width: 100%; height: 65vh; border: none; background: #000; }
+        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; }
+        .ep-btn { padding: 8px 15px; background: #222; border-radius: 4px; cursor: pointer; font-size: 12px; border: 1px solid #333; }
+        .ep-btn.active { background: var(--main); color: #000; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<nav class="nav">
+    <a href="/" class="logo">BOSSMOVIE</a>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Tìm phim từ 3 nguồn...">
+    </div>
+</nav>
+
+<div id="grid" class="grid"></div>
+
+<div id="overlay">
+    <div class="p-header">
+        <h3 id="mName" style="margin:0; color:var(--main);"></h3>
+        <button onclick="closeP()" style="background:#ff4444; border:none; color:#fff; padding:8px 15px; border-radius:5px; cursor:pointer;">ĐÓNG</button>
+    </div>
+    <iframe id="pFrame" allowfullscreen></iframe>
+    <div id="epList" class="eps"></div>
+</div>
+
+<script>
+    async function loadMovies(keyword = '') {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center">Đang tìm kiếm...</p>';
+        const sources = ['ophim', 'kkphim', 'nguonc'];
+        let html = '';
+
+        for (let src of sources) {
+            try {
+                const res = await fetch(`/api/movies?src=${src}&keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
+                const items = res.data?.items || res.items || [];
+                html += items.map(m => `
+                    <div class="card" onclick="openMovie('${m.slug}', '${src}')">
+                        <span class="badge">${src.toUpperCase()}</span>
+                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}">
+                        <div class="card-name">${m.name}</div>
+                    </div>
+                `).join('');
+            } catch (e) {}
         }
-
-        document.getElementById('m-name').innerText = movie.name;
-        
-        // Tìm server có dữ liệu link embed
-        let list = [];
-        if (episodes && episodes.length > 0) {
-            const server = episodes.find(sv => (sv.server_data || sv.items || []).length > 0) || episodes[0];
-            list = server.server_data || server.items || [];
-        }
-
-        if (list.length === 0) throw new Error("No link");
-
-        epDiv.innerHTML = list.map((e, i) => `
-            <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
-        `).join('');
-        
-        play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
-
-    } catch(e) { 
-        console.error(e);
-        epDiv.innerHTML = `<p style="color:red">Lỗi: Nguồn ${src} chưa cập nhật link cho phim này!</p>`;
+        grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center">Không có kết quả.</p>';
     }
-}
+
+    async function openMovie(slug, src) {
+        document.getElementById('overlay').style.display = 'flex';
+        const epDiv = document.getElementById('epList');
+        epDiv.innerHTML = 'Đang tải tập phim...';
+        
+        try {
+            const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
+            
+            // Fix logic phân loại dữ liệu từng nguồn
+            let movie = (src === 'nguonc') ? res.movie : (res.data?.item || res.movie);
+            let episodes = (src === 'nguonc') ? res.movie.episodes : (res.data?.item?.episodes || res.movie?.episodes);
+            
+            document.getElementById('mName').innerText = movie.name;
+            
+            const server = episodes.find(sv => (sv.server_data || sv.items || []).length > 0) || episodes[0];
+            const list = server.server_data || server.items || [];
+            
+            epDiv.innerHTML = list.map((e, i) => `
+                <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
+            `).join('');
+            
+            if(list[0]) play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
+        } catch (e) {
+            epDiv.innerHTML = '<p style="color:red">Lỗi bóc tách link từ nguồn này!</p>';
+        }
+    }
+
+    function play(url, btn) {
+        document.getElementById('pFrame').src = url;
+        document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+    }
+
+    function closeP() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('pFrame').src = "";
+    }
+
+    document.getElementById('searchInput').onkeypress = (e) => { if(e.key==='Enter') loadMovies(e.target.value); };
+    window.onload = () => loadMovies();
+</script>
+</body>
+</html>
