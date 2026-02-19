@@ -1,109 +1,69 @@
-"""
-Vercel Serverless Function cho OPhim API Proxy
-"""
-
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
-import json
+from flask import Flask, request, jsonify, make_response
 import requests
-from datetime import datetime
-import os
+from flask_cors import CORS
+from concurrent.futures import ThreadPoolExecutor
 
-# OPhim API base URL
-OPHIM_BASE_URL = "https://ophim17.cc"
+app = Flask(__name__)
+CORS(app)
 
-# Simple in-memory cache (Vercel functions are stateless, nên cache này chỉ tồn tại trong 1 request)
-# Để cache tốt hơn, nên dùng Vercel KV hoặc Redis
-cache = {}
+# Cấu hình nguồn API
+SOURCES = {
+    "ophim": "https://ophim1.com/api/v1",
+    "kkphim": "https://phimapi.com",
+    "nguonc": "https://phim.nguonc.com/api"
+}
 
-class handler(BaseHTTPRequestHandler):
-    
-    def do_GET(self):
-        """Handle GET requests"""
-        
-        # Parse URL
-        parsed_url = urlparse(self.path)
-        path = parsed_url.path
-        query_params = parse_qs(parsed_url.query)
-        
-        # Set CORS headers
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
-        
-        # Route handling
-        try:
-            if path == '/':
-                response = self.handle_root()
-            elif path.startswith('/api/danh-sach/phim-moi-cap-nhat'):
-                page = query_params.get('page', ['1'])[0]
-                response = self.fetch_ophim(f"/danh-sach/phim-moi-cap-nhat?page={page}")
-            elif path.startswith('/api/danh-sach/'):
-                slug = path.replace('/api/danh-sach/', '')
-                page = query_params.get('page', ['1'])[0]
-                response = self.fetch_ophim(f"/danh-sach/{slug}?page={page}")
-            elif path.startswith('/api/phim/'):
-                slug = path.replace('/api/phim/', '')
-                response = self.fetch_ophim(f"/phim/{slug}")
-            elif path.startswith('/api/v1/api/tim-kiem'):
-                keyword = query_params.get('keyword', [''])[0]
-                limit = query_params.get('limit', [''])[0]
-                endpoint = f"/v1/api/tim-kiem?keyword={keyword}"
-                if limit:
-                    endpoint += f"&limit={limit}"
-                response = self.fetch_ophim(endpoint)
-            elif path == '/api/the-loai':
-                response = self.fetch_ophim("/the-loai")
-            elif path == '/api/quoc-gia':
-                response = self.fetch_ophim("/quoc-gia")
-            else:
-                response = {"error": "Endpoint not found"}
-            
-            self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
-            
-        except Exception as e:
-            error_response = {"error": str(e)}
-            self.wfile.write(json.dumps(error_response).encode('utf-8'))
-    
-    def do_OPTIONS(self):
-        """Handle OPTIONS requests for CORS preflight"""
-        self.send_response(200)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers()
-    
-    def handle_root(self):
-        """API documentation"""
-        return {
-            "name": "OPhim Proxy API on Vercel",
-            "version": "2.0.0",
-            "description": "Serverless proxy for OPhim API",
-            "endpoints": {
-                "GET /api/danh-sach/phim-moi-cap-nhat": "Phim mới cập nhật",
-                "GET /api/danh-sach/<slug>": "Danh sách theo danh mục",
-                "GET /api/phim/<slug>": "Chi tiết phim",
-                "GET /api/v1/api/tim-kiem": "Tìm kiếm phim",
-                "GET /api/the-loai": "Danh sách thể loại",
-                "GET /api/quoc-gia": "Danh sách quốc gia"
-            },
-            "deployed_on": "Vercel Serverless Functions",
-            "timestamp": datetime.now().isoformat()
-        }
-    
-    def fetch_ophim(self, endpoint):
-        """Fetch data from OPhim API"""
-        try:
-            url = f"{OPHIM_BASE_URL}{endpoint}"
-            
-            # Vercel Edge caching sẽ tự động cache response
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
-            
-            return response.json()
-            
-        except requests.exceptions.RequestException as e:
-            return {"error": f"Failed to fetch from OPhim: {str(e)}"}
+def fetch_source(url):
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        resp = requests.get(url, headers=headers, timeout=5)
+        return resp.json()
+    except:
+        return None
+
+@app.route('/api/movies')
+def get_movies():
+    keyword = request.args.get('keyword', '')
+    page = request.args.get('page', '1')
+    path = request.args.get('path', '')
+    src = request.args.get('src', '')
+
+    # 1. Nếu là yêu cầu lấy CHI TIẾT 1 bộ phim
+    if path and src:
+        base = SOURCES.get(src)
+        # Chuẩn hóa endpoint theo tài liệu
+        if src == "nguonc": url = f"{base}/film/{path}"
+        elif src == "kkphim": url = f"{base}/phim/{path}"
+        else: url = f"{base}/phim/{path}"
+        return jsonify(fetch_source(url))
+
+    # 2. Nếu là TÌM KIẾM hoặc TRANG CHỦ (Merge 3 nguồn)
+    urls = []
+    if keyword:
+        urls = [
+            (f"{SOURCES['ophim']}/tim-kiem?keyword={keyword}&page={page}", "ophim"),
+            (f"{SOURCES['kkphim']}/v1/api/tim-kiem?keyword={keyword}&page={page}", "kkphim"),
+            (f"{SOURCES['nguonc']}/films/search?keyword={keyword}&page={page}", "nguonc")
+        ]
+    else:
+        urls = [
+            (f"{SOURCES['ophim']}/danh-sach/phim-moi-cap-nhat?page={page}", "ophim"),
+            (f"{SOURCES['kkphim']}/danh-sach/phim-moi-cap-nhat?page={page}", "kkphim"),
+            (f"{SOURCES['nguonc']}/films/phim-moi-cap-nhat?page={page}", "nguonc")
+        ]
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        results = list(executor.map(lambda x: (fetch_source(x[0]), x[1]), urls))
+
+    merged_data = []
+    for data, name in results:
+        if not data: continue
+        items = data.get('data', {}).get('items', []) if name != "nguonc" else data.get('items', [])
+        for item in items:
+            item['_source'] = name # Đánh dấu nguồn phim
+            merged_data.append(item)
+
+    return jsonify(merged_data)
+
+if __name__ == '__main__':
+    app.run(debug=True)
