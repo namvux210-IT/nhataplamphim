@@ -11,12 +11,13 @@ def handle():
     slug = request.args.get('path', '')
     headers = {"Referer": "https://phimapi.com/", "User-Agent": "Mozilla/5.0"}
     
+    # Ưu tiên lấy chi tiết phim nếu có slug (path)
     if slug:
         url = f"https://phimapi.com/phim/{slug}"
     else:
-        # Khớp chính xác với tham số link mẫu bạn gửi
+        # Tìm kiếm mặc định giới hạn 20 phim
         url = f"https://phimapi.com/v1/api/tim-kiem?keyword={kw}&limit=20"
-    
+        
     try:
         return jsonify(requests.get(url, headers=headers, timeout=10).json())
     except:
