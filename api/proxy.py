@@ -1,52 +1,58 @@
 from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
-import functools
+import time
 
 app = Flask(__name__)
 CORS(app)
 
-# Cache đơn giản để tăng tốc độ phản hồi
-@functools.lru_cache(maxsize=128)
-def fetch_from_ophim(url):
-    headers = {"accept": "application/json", "User-Agent": "Mozilla/5.0"}
-    try:
-        r = requests.get(url, headers=headers, timeout=10)
-        return r.json()
-    except:
-        return None
+# Bộ nhớ đệm (Cache) đơn giản trong RAM
+# Trong môi trường thực tế, kết quả sẽ được lưu để tránh gọi API Ophim liên tục
+cache_store = {}
+CACHE_TIME = 600 # Cache trong 10 phút
 
 @app.route('/api/proxy')
 def handle():
     kw = request.args.get('keyword', '')
     slug = request.args.get('path', '')
     
-    # Khớp chính xác với code mẫu bạn gửi
+    # Tạo URL dựa trên yêu cầu: Tìm kiếm hoặc Chi tiết phim
     if slug:
-        url = f"https://ophim1.com/v1/api/phim/{slug}"
-    elif kw:
-        url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}"
+        target_url = f"https://ophim1.com/v1/api/phim/{slug}"
     else:
-        url = "https://ophim1.com/v1/api/danh-sach/phim-moi-cap-nhat?page=1"
+        # Sử dụng đúng mẫu URL bạn cung cấp
+        target_url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}"
 
-    data = fetch_from_ophim(url)
-    if not data:
-        return jsonify({"status": False, "msg": "Server Ophim không phản hồi"})
+    # Kiểm tra Cache
+    current_time = time.time()
+    if target_url in cache_store:
+        entry = cache_store[target_url]
+        if current_time - entry['timestamp'] < CACHE_TIME:
+            return jsonify(entry['data'])
 
-    # Sửa lỗi Poster không hiển thị (No Poster)
-    # Tự động thêm domain nếu Ophim chỉ trả về path tương đối
-    def fix_assets(obj):
+    # Thực hiện gọi API bằng requests theo mẫu bạn cung cấp
+    headers = {"accept": "application/json", "User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(target_url, headers=headers, timeout=10)
+        data = response.json()
+
+        # Logic sửa lỗi Poster: Tự động ghép domain nếu path bị thiếu
         domain = "https://img.phimapi.com/"
-        for key in ['poster_url', 'thumb_url']:
-            if key in obj and obj[key] and not str(obj[key]).startswith('http'):
-                obj[key] = f"{domain}{obj[key]}"
-        return obj
+        
+        if 'data' in data:
+            # Nếu là danh sách tìm kiếm
+            if 'items' in data['data']:
+                for item in data['data']['items']:
+                    if item.get('poster_url') and not item['poster_url'].startswith('http'):
+                        item['poster_url'] = f"{domain}{item['poster_url']}"
+            # Nếu là chi tiết 1 bộ phim
+            if 'item' in data['data']:
+                item = data['data']['item']
+                if item.get('poster_url') and not item['poster_url'].startswith('http'):
+                    item['poster_url'] = f"{domain}{item['poster_url']}"
 
-    # Xử lý bóc tách dựa trên cấu trúc JSON thực tế của Ophim
-    if 'data' in data:
-        if 'items' in data['data']: # Danh sách phim
-            data['data']['items'] = [fix_assets(item) for item in data['data']['items']]
-        if 'item' in data['data']: # Chi tiết 1 bộ phim
-            data['data']['item'] = fix_assets(data['data']['item'])
-            
-    return jsonify(data)
+        # Lưu vào cache trước khi trả về
+        cache_store[target_url] = {'data': data, 'timestamp': current_time}
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"status": False, "error": str(e)})
