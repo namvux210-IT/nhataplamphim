@@ -11,29 +11,39 @@ SOURCES = {
     "nguonc": "https://phim.nguonc.com/api"
 }
 
+def fetch_json(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://phimapi.com/"
+    }
+    try:
+        resp = requests.get(url, headers=headers, timeout=10)
+        return resp.json()
+    except:
+        return None
+
 @app.route('/api/movies')
 def handle_request():
     src = request.args.get('src', 'ophim')
     path = request.args.get('path', '')
     keyword = request.args.get('keyword', '')
+    page = request.args.get('page', '1')
+    
     base = SOURCES.get(src)
+    if not base: return jsonify({"error": "Invalid source"})
 
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-
-    try:
-        if path:
-            # Fix logic lấy chi tiết cho từng nguồn
-            url = f"{base}/film/{path}" if src == "nguonc" else f"{base}/phim/{path}"
-            resp = requests.get(url, headers=headers, timeout=10).json()
-            return jsonify(resp)
+    # Lấy chi tiết phim - Fix logic cho Nguonc và KKPhim
+    if path:
+        url = f"{base}/film/{path}" if src == "nguonc" else f"{base}/phim/{path}"
+        return jsonify(fetch_json(url))
+    
+    # Tìm kiếm phim
+    if keyword:
+        if src == "nguonc": url = f"{base}/films/search?keyword={keyword}&page={page}"
+        elif src == "kkphim": url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
+        else: url = f"{base}/tim-kiem?keyword={keyword}&page={page}"
+        return jsonify(fetch_json(url))
         
-        if keyword:
-            if src == "nguonc": url = f"{base}/films/search?keyword={keyword}"
-            elif src == "kkphim": url = f"{base}/v1/api/tim-kiem?keyword={keyword}"
-            else: url = f"{base}/tim-kiem?keyword={keyword}"
-        else:
-            url = f"{base}/films/phim-moi-cap-nhat" if src == "nguonc" else f"{base}/danh-sach/phim-moi-cap-nhat"
-            
-        return jsonify(requests.get(url, headers=headers).json())
-    except Exception as e:
-        return jsonify({"error": str(e)})
+    # Mặc định lấy phim mới
+    url = f"{base}/films/phim-moi-cap-nhat?page={page}" if src == "nguonc" else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
+    return jsonify(fetch_json(url))
