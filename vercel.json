@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "rewrites": [
     { "source": "/api/kkphim", "destination": "/api/kkphim.py" },
     { "source": "/api/nguonc", "destination": "/api/nguonc.py" },
