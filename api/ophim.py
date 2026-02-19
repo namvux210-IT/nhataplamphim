@@ -7,16 +7,16 @@ CORS(app)
 
 @app.route('/api/ophim')
 def handle():
-    kw = request.args.get('keyword', '')
-    slug = request.args.get('path', '')
+    slug = request.args.get('path')
+    kw = request.args.get('keyword')
     headers = {"accept": "application/json", "User-Agent": "Mozilla/5.0"}
     
-    if slug:
-        url = f"https://ophim1.com/api/v1/phim/{slug}"
-    else:
-        url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}"
-        
+    # Endpoint theo code mẫu của bạn
+    if slug: url = f"https://ophim1.com/v1/api/phim/{slug}"
+    elif kw: url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}"
+    else: url = "https://ophim1.com/api/v1/danh-sach/phim-moi-cap-nhat"
+    
     try:
         return jsonify(requests.get(url, headers=headers, timeout=10).json())
     except:
-        return jsonify({"status": False, "data": {"items": []}})
+        return jsonify({"status": False})
