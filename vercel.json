@@ -1,8 +1,4 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/kkphim", "destination": "/api/kkphim.py" },
-    { "source": "/api/nguonc", "destination": "/api/nguonc.py" },
-    { "source": "/api/ophim", "destination": "/api/ophim.py" }
-  ]
+  "rewrites": [{ "source": "/api/movie/(.*)", "destination": "/api/proxy.py?path=$1" }]
 }
