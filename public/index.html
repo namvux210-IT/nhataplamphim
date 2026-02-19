@@ -2,113 +2,116 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BossMovie - Phim Đỉnh Cao</title>
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <title>BossMovie - Player Gốc</title>
     <style>
         :root { --main: #ffb400; --bg: #0a0a0a; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; }
-        nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
-        .logo { color: var(--main); font-size: 24px; font-weight: 900; text-decoration: none; }
-        .search-box { background: #1a1a1a; padding: 8px 20px; border-radius: 20px; width: 40%; display: flex; }
-        .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 20px 5%; }
-        .card { background: #111; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: 0.3s; position: relative; }
-        .card:hover { border-color: var(--main); transform: translateY(-5px); }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
+        .nav { background: #000; padding: 15px 5%; border-bottom: 2px solid var(--main); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { color: var(--main); font-size: 26px; font-weight: 900; text-decoration: none; letter-spacing: 1px; }
+        .search-input { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px 20px; border-radius: 20px; width: 300px; outline: none; transition: 0.3s; }
+        .search-input:focus { border-color: var(--main); width: 350px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 20px; padding: 20px 5%; }
+        .card { background: #111; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid #222; position: relative; }
+        .card:hover { transform: translateY(-5px); border-color: var(--main); box-shadow: 0 5px 15px rgba(255,180,0,0.2); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-name { padding: 10px; font-size: 13px; text-align: center; font-weight: bold; }
-        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.8); color: var(--main); font-size: 10px; padding: 3px 7px; border-radius: 4px; }
+        .card-t { padding: 10px; text-align: center; font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .badge { position: absolute; top: 5px; left: 5px; background: rgba(0,0,0,0.8); color: var(--main); font-size: 10px; padding: 3px 8px; border-radius: 4px; font-weight: bold; }
         
-        /* Trình phát */
-        #player-overlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: none; flex-direction: column; }
-        .video-js { width: 100%; height: 60vh; }
-        .episodes { padding: 20px 5%; flex: 1; overflow-y: auto; background: #0a0a0a; display: flex; flex-wrap: wrap; gap: 10px; }
-        .ep-item { padding: 8px 15px; background: #222; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        .ep-item.active { background: var(--main); color: #000; font-weight: bold; }
+        /* Modal Player Gốc */
+        #overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
+        .header-player { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; }
+        #embed-player { width: 100%; height: 70vh; border: none; background: #000; }
+        .ep-list { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; background: #0a0a0a; overflow-y: auto; flex: 1; }
+        .ep-btn { padding: 10px 20px; background: #222; border-radius: 5px; cursor: pointer; font-size: 13px; transition: 0.2s; border: 1px solid #333; }
+        .ep-btn:hover { border-color: var(--main); }
+        .ep-btn.active { background: var(--main); color: #000; font-weight: bold; border-color: var(--main); }
     </style>
 </head>
 <body>
-
-<nav>
-    <a href="/" class="logo">BOSSMOVIE</a>
-    <div class="search-box"><input type="text" id="searchInput" placeholder="Tìm phim từ 3 nguồn..."></div>
-</nav>
-
-<div id="grid" class="grid"></div>
-
-<div id="player-overlay">
-    <div style="padding: 10px 5%; display: flex; justify-content: space-between; align-items: center;">
-        <h3 id="m-title" style="color:var(--main); margin:0;"></h3>
-        <button onclick="closePlayer()" style="background:red; color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">ĐÓNG [X]</button>
+    <div class="nav">
+        <a href="/" class="logo">BOSSMOVIE</a>
+        <input type="text" id="s-input" class="search-input" placeholder="Nhập tên phim rồi nhấn Enter...">
     </div>
-    <video id="v-player" class="video-js vjs-big-play-centered"></video>
-    <div id="eps" class="episodes"></div>
-</div>
-
-<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-<script>
-    const player = videojs('v-player', { controls: true, fluid: true });
     
-    async function loadMovies(keyword = '') {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '<p>Đang quét phim từ 3 nguồn...</p>';
-        const sources = ['ophim', 'kkphim', 'nguonc'];
-        let html = '';
+    <div id="grid" class="grid"></div>
 
-        for (let src of sources) {
+    <div id="overlay">
+        <div class="header-player">
+            <h3 id="m-name" style="margin:0; color:var(--main); font-size: 18px;"></h3>
+            <button onclick="closeP()" style="background:#ff4444; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">ĐÓNG [X]</button>
+        </div>
+        <iframe id="embed-player" allowfullscreen></iframe>
+        <div id="eps" class="ep-list"></div>
+    </div>
+
+    <script>
+        async function load(keyword = '') {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Đang đồng bộ dữ liệu từ 3 nguồn...</p>';
+            const srcs = ['ophim', 'kkphim', 'nguonc'];
+            let html = '';
+            
+            for(let s of srcs) {
+                try {
+                    const res = await fetch(`/api/movies?src=${s}&keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
+                    const items = res.data?.items || res.items || [];
+                    html += items.map(m => `
+                        <div class="card" onclick="openM('${m.slug}', '${s}')">
+                            <span class="badge">${s.toUpperCase()}</span>
+                            <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}" onerror="this.src='https://placehold.co/200x300?text=No+Image'">
+                            <div class="card-t">${m.name}</div>
+                        </div>`).join('');
+                } catch(e) {}
+            }
+            grid.innerHTML = html || '<p style="grid-column: 1/-1; text-align:center;">Không tìm thấy phim nào phù hợp.</p>';
+        }
+
+        async function openM(slug, src) {
+            const overlay = document.getElementById('overlay');
+            const epDiv = document.getElementById('eps');
+            const iframe = document.getElementById('embed-player');
+            
+            overlay.style.display = 'flex';
+            epDiv.innerHTML = '<p>Đang tải danh sách tập...</p>';
+            iframe.src = ""; // Clear player cũ
+
             try {
-                const res = await fetch(`/api/movies?src=${src}&keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
-                const items = res.data?.items || res.items || [];
-                html += items.map(m => `
-                    <div class="card" onclick="openMovie('${m.slug}', '${src}')">
-                        <span class="badge">${src.toUpperCase()}</span>
-                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}">
-                        <div class="card-name">${m.name}</div>
-                    </div>
+                const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
+                const movie = (src === 'nguonc') ? res.movie : res.data.item;
+                const episodes = (src === 'nguonc') ? res.movie.episodes : res.data.item.episodes;
+                
+                document.getElementById('m-name').innerText = movie.name;
+                
+                // Tìm server chứa dữ liệu
+                const server = episodes.find(sv => (sv.server_data || sv.items).length > 0) || episodes[0];
+                const list = server.server_data || server.items;
+                
+                epDiv.innerHTML = list.map((e, i) => `
+                    <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
                 `).join('');
-            } catch (e) {}
+                
+                // Tự động mở tập 1 bằng Player gốc
+                if(list[0]) play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
+            } catch(e) { 
+                alert("Nguồn phim này đang bảo trì, vui lòng chọn phim khác!"); 
+                closeP(); 
+            }
         }
-        grid.innerHTML = html || '<p>Không tìm thấy phim.</p>';
-    }
 
-    async function openMovie(slug, src) {
-        document.getElementById('player-overlay').style.display = 'flex';
-        document.getElementById('eps').innerHTML = 'Đang lấy link...';
+        function play(url, btn) {
+            if(!url) return alert("Tập này chưa có link embed!");
+            document.getElementById('embed-player').src = url;
+            document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+        }
+
+        function closeP() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('embed-player').src = "";
+        }
         
-        try {
-            const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
-            const movie = (src === 'nguonc') ? res.movie : res.data.item;
-            const episodes = (src === 'nguonc') ? res.movie.episodes : res.data.item.episodes;
-            
-            document.getElementById('m-title').innerText = movie.name;
-            const server = episodes[0];
-            const list = server.server_data || server.items;
-            
-            document.getElementById('eps').innerHTML = list.map((e, i) => `
-                <div class="ep-item ${i===0?'active':''}" onclick="play('${e.link_embed || e.m3u8_url}', this)">Tập ${e.name}</div>
-            `).join('');
-            
-            play(list[0].link_embed || list[0].m3u8_url, document.querySelector('.ep-item'));
-        } catch (e) {
-            alert("Lỗi server nguồn, hãy thử phim khác!");
-            closePlayer();
-        }
-    }
-
-    function play(url, btn) {
-        player.src({ src: url, type: url.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4' });
-        player.play();
-        document.querySelectorAll('.ep-item').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    }
-
-    function closePlayer() {
-        player.pause();
-        document.getElementById('player-overlay').style.display = 'none';
-    }
-
-    document.getElementById('searchInput').onkeypress = (e) => { if(e.key==='Enter') loadMovies(e.target.value); };
-    window.onload = () => loadMovies();
-</script>
+        document.getElementById('s-input').onkeyup = (e) => { if(e.key==='Enter') load(e.target.value); };
+        window.onload = () => load();
+    </script>
 </body>
 </html>
