@@ -6,13 +6,13 @@
     <title>GOLD CINEMA</title>
     <style>
         :root { --gold: #FFD700; --bg: #000; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; }
         
-        .nav { padding: 12px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; background: #000; position: sticky; top: 0; z-index: 100; }
+        .nav { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; background: #000; position: sticky; top: 0; z-index: 100; }
         .logo { color: var(--gold); font-weight: 900; font-size: 20px; cursor: pointer; }
         input { background: #111; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 4px; width: 140px; }
 
-        .container { padding: 20px 5%; }
+        .container { padding: 15px 5%; height: 90vh; overflow-y: auto; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; }
         @media (min-width: 768px) { .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; } }
 
@@ -21,21 +21,19 @@
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
         .card-name { padding: 8px; font-size: 11px; text-align: center; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Lớp 2: Giới thiệu nhỏ (Intro Overlay) */
-        #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-        .intro-box { background: #111; border: 1px solid var(--gold); border-radius: 12px; width: 100%; max-width: 400px; padding: 25px; text-align: center; box-shadow: 0 0 30px rgba(255,215,0,0.2); }
-        .intro-img { width: 120px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
-        .btn-start { background: var(--gold); color: #000; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; width: 100%; margin: 15px 0; cursor: pointer; font-size: 16px; }
-        .btn-close { color: #888; background: none; border: none; cursor: pointer; font-size: 14px; text-decoration: underline; }
+        /* Lớp giới thiệu phim ngắn gọn */
+        #intro-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: none; z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .intro-content { background: #111; border: 1px solid var(--gold); border-radius: 12px; max-width: 350px; width: 100%; padding: 20px; text-align: center; }
+        .intro-poster { width: 100px; border-radius: 6px; margin-bottom: 10px; }
+        .btn-play { background: var(--gold); color: #000; border: none; padding: 12px; border-radius: 25px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; margin: 10px 0; }
 
-        /* Lớp 3: Player toàn màn hình */
-        #player-view { position: fixed; inset: 0; background: #000; display: none; z-index: 2000; flex-direction: column; }
-        .player-head { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; background: #111; }
-        .iframe-wrap { flex: 1; position: relative; }
-        iframe { width: 100%; height: 100%; border: none; }
-        .ep-wrap { padding: 15px; background: #000; overflow-x: auto; white-space: nowrap; border-top: 1px solid #222; }
-        .ep-btn { background: #222; border: 1px solid #444; color: #fff; padding: 8px 15px; border-radius: 4px; margin-right: 8px; cursor: pointer; }
-        .ep-btn.active, .ep-btn:focus { background: var(--gold); color: #000; font-weight: bold; border-color: #fff; outline: none; }
+        /* Trình phát toàn màn hình */
+        #fullscreen-player { position: fixed; inset: 0; background: #000; display: none; z-index: 2000; flex-direction: column; }
+        .player-header { padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; background: #111; }
+        iframe { flex: 1; width: 100%; border: none; }
+        .ep-list { padding: 10px; background: #000; display: flex; gap: 8px; overflow-x: auto; border-top: 1px solid #222; }
+        .ep-item { background: #222; color: #fff; border: 1px solid #444; padding: 8px 15px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .ep-item.active { background: var(--gold); color: #000; border-color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -49,84 +47,81 @@
     <div id="movieGrid" class="grid"></div>
 </div>
 
-<div id="intro-overlay">
-    <div class="intro-box">
-        <img id="introPoster" class="intro-img" src="">
-        <h2 id="introTitle" style="margin: 0; color: var(--gold);"></h2>
-        <p id="introMeta" style="color: #888; font-size: 13px; margin: 10px 0;"></p>
-        <button class="btn-start" onclick="openFullscreen()">▶ BẮT ĐẦU XEM PHIM</button>
-        <button class="btn-close" onclick="closeIntro()">Để sau</button>
+<div id="intro-modal">
+    <div class="intro-content">
+        <img id="introImg" class="intro-poster" src="">
+        <h2 id="introTitle" style="color:var(--gold); margin: 5px 0;"></h2>
+        <p id="introMeta" style="font-size: 12px; color: #888;"></p>
+        <button class="btn-play" onclick="startMovie()">BẮT ĐẦU XEM</button>
+        <button onclick="closeIntro()" style="background:none; border:none; color:#555; cursor:pointer;">Đóng</button>
     </div>
 </div>
 
-<div id="player-view">
-    <div class="player-head">
-        <span id="topTitle" style="font-weight: bold;"></span>
-        <button style="background:red; color:#fff; border:none; padding:5px 15px; border-radius:4px;" onclick="closePlayer()">THOÁT [X]</button>
+<div id="fullscreen-player">
+    <div class="player-header">
+        <span id="pTitle" style="font-weight:bold; color:var(--gold)"></span>
+        <button onclick="closePlayer()" style="background:red; color:#fff; border:none; padding:5px 12px; border-radius:4px;">THOÁT X</button>
     </div>
-    <div class="iframe-wrap"><iframe id="mainVideo" allowfullscreen></iframe></div>
-    <div id="epList" class="ep-wrap"></div>
+    <iframe id="videoFrame" allowfullscreen></iframe>
+    <div id="epContainer" class="ep-list"></div>
 </div>
 
 <script>
-    let currentMovie = null;
+    let activeMovie = null;
 
-    async function load(kw = '') {
+    async function loadList(kw = '') {
         const g = document.getElementById('movieGrid');
         g.innerHTML = '...';
         const url = kw ? `/api/proxy?keyword=${encodeURIComponent(kw)}` : `/api/proxy`;
         try {
             const r = await fetch(url).then(res => res.json());
-            const list = r.data?.items || [];
-            g.innerHTML = list.map(m => `
-                <div class="card" tabindex="0" onclick="showIntro('${m.slug}')">
-                    <img src="${m.poster_url}" onerror="this.src='https://placehold.co/300x450/111/333?text=IMAGE'">
+            const items = r.data?.items || [];
+            g.innerHTML = items.map(m => `
+                <div class="card" tabindex="0" onclick="getDetail('${m.slug}')">
+                    <img src="${m.poster_url}" onerror="this.src='https://placehold.co/300x450/111/444?text=ERROR'">
                     <div class="card-name">${m.name}</div>
                 </div>
             `).join('');
         } catch(e) { g.innerHTML = 'Lỗi kết nối!'; }
     }
 
-    window.showIntro = async function(slug) {
+    window.getDetail = async function(slug) {
         try {
             const r = await fetch(`/api/proxy?path=${slug}`).then(res => res.json());
-            currentMovie = r.data.item;
-            document.getElementById('introTitle').innerText = currentMovie.name;
-            document.getElementById('introPoster').src = currentMovie.poster_url;
-            document.getElementById('introMeta').innerText = `${currentMovie.year} • ${currentMovie.time}`;
-            document.getElementById('intro-overlay').style.display = 'flex';
-        } catch(e) { alert('Không tải được thông tin!'); }
+            activeMovie = r.data.item;
+            document.getElementById('introTitle').innerText = activeMovie.name;
+            document.getElementById('introImg').src = activeMovie.poster_url;
+            document.getElementById('introMeta').innerText = `${activeMovie.year} | ${activeMovie.time}`;
+            document.getElementById('intro-modal').style.display = 'flex';
+        } catch(e) { alert('Không tải được phim!'); }
     };
 
-    window.openFullscreen = () => {
-        const srv = currentMovie.episodes[0]?.server_data || [];
-        document.getElementById('topTitle').innerText = currentMovie.name;
-        document.getElementById('mainVideo').src = srv[0]?.link_embed || "";
-        document.getElementById('epList').innerHTML = srv.map((e, i) => `
-            <button class="ep-btn ${i===0?'active':''}" tabindex="0" onclick="changeEp('${e.link_embed}', this)">${e.name}</button>
+    window.startMovie = () => {
+        const eps = activeMovie.episodes[0]?.server_data || [];
+        document.getElementById('pTitle').innerText = activeMovie.name;
+        document.getElementById('videoFrame').src = eps[0]?.link_embed || "";
+        document.getElementById('epContainer').innerHTML = eps.map((e, i) => `
+            <button class="ep-item ${i===0?'active':''}" onclick="changeEp('${e.link_embed}', this)">Tập ${e.name}</button>
         `).join('');
         
-        document.getElementById('intro-overlay').style.display = 'none';
-        document.getElementById('player-view').style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+        document.getElementById('intro-modal').style.display = 'none';
+        document.getElementById('fullscreen-player').style.display = 'flex';
     };
 
     window.changeEp = (url, btn) => {
-        document.getElementById('mainVideo').src = url;
-        document.querySelectorAll('.ep-btn').forEach(x => x.classList.remove('active'));
+        document.getElementById('videoFrame').src = url;
+        document.querySelectorAll('.ep-item').forEach(el => el.classList.remove('active'));
         btn.classList.add('active');
-        btn.focus();
     };
 
-    window.closeIntro = () => { document.getElementById('intro-overlay').style.display = 'none'; };
+    window.closeIntro = () => document.getElementById('intro-modal').style.display = 'none';
     window.closePlayer = () => {
-        document.getElementById('player-view').style.display = 'none';
-        document.getElementById('mainVideo').src = "";
-        document.body.style.overflow = 'auto';
+        document.getElementById('fullscreen-player').style.display = 'none';
+        document.getElementById('videoFrame').src = "";
     };
 
-    document.getElementById('search').onkeypress = (e) => { if(e.key === 'Enter') load(e.target.value); };
-    window.onload = () => load();
+    document.getElementById('search').onkeypress = (e) => { if(e.key === 'Enter') loadList(e.target.value); };
+    window.onload = () => loadList();
 </script>
 </body>
 </html>
