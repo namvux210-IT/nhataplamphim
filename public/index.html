@@ -3,41 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BossMovie - Fixed Player & Sources</title>
+    <title>BossMovie - Đa Nguồn Phim</title>
     <style>
         :root { --main: #00d2ff; --bg: #050505; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
-        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 100; }
-        .logo { color: var(--main); font-size: 24px; font-weight: 900; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; }
-        .search-box { background: #151515; border-radius: 25px; padding: 8px 20px; width: 35%; display: flex; border: 1px solid #333; transition: 0.3s; }
-        .search-box:focus-within { border-color: var(--main); box-shadow: 0 0 10px rgba(0,210,255,0.3); }
-        .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; font-size: 14px; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; margin: 0; }
+        .nav { background: #000; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main); position: sticky; top: 0; z-index: 100; gap: 10px; }
+        .logo { color: var(--main); font-size: 22px; font-weight: 900; text-decoration: none; }
+        
+        /* Nút chọn nguồn */
+        .source-selector { background: #1a1a1a; color: var(--main); border: 1px solid var(--main); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; outline: none; }
+        
+        .search-box { background: #151515; border-radius: 20px; padding: 8px 15px; flex: 1; max-width: 300px; display: flex; border: 1px solid #333; }
+        .search-box input { background: none; border: none; color: #fff; width: 100%; outline: none; }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; padding: 25px 5%; }
-        .card { background: #111; border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.4s; border: 1px solid #222; position: relative; }
-        .card:hover { transform: translateY(-8px); border-color: var(--main); box-shadow: 0 10px 20px rgba(0,210,255,0.2); }
+        .card { background: #111; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.3s; border: 1px solid #222; position: relative; }
+        .card:hover { transform: translateY(-5px); border-color: var(--main); }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-name { padding: 12px; font-size: 13px; text-align: center; font-weight: 600; line-height: 1.4; height: 40px; overflow: hidden; }
-        .badge { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: var(--main); font-size: 10px; padding: 4px 8px; border-radius: 5px; font-weight: bold; border: 1px solid var(--main); z-index: 10; }
+        .card-name { padding: 10px; font-size: 13px; text-align: center; font-weight: bold; }
 
         /* Player Overlay */
         #overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: none; flex-direction: column; }
-        .p-header { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; border-bottom: 1px solid #222; }
+        .p-header { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: #111; }
         iframe { width: 100%; height: 65vh; border: none; background: #000; }
-        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; background: #050505; align-content: flex-start; }
-        .ep-btn { padding: 10px 18px; background: #1a1a1a; border-radius: 6px; cursor: pointer; font-size: 13px; border: 1px solid #333; transition: 0.2s; color: #ccc; min-width: 60px; text-align: center; }
-        .ep-btn:hover { border-color: var(--main); color: #fff; }
-        .ep-btn.active { background: var(--main); color: #000; font-weight: bold; border-color: var(--main); }
-        
-        #loading-text { width: 100%; text-align: center; padding: 20px; color: var(--main); font-weight: bold; }
+        .eps { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; flex: 1; }
+        .ep-btn { padding: 8px 15px; background: #222; border-radius: 5px; cursor: pointer; font-size: 12px; border: 1px solid #333; }
+        .ep-btn.active { background: var(--main); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <nav class="nav">
     <a href="/" class="logo">BossMovie</a>
+    
+    <select id="sourceSelect" class="source-selector" onchange="changeSource()">
+        <option value="kkphim">NGUỒN KKPHIM</option>
+        <option value="nguonc">NGUỒN NGUONC</option>
+        <option value="ophim">NGUỒN OPHIM</option>
+    </select>
+
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Tìm phim từ NguonC & KKPhim...">
+        <input type="text" id="searchInput" placeholder="Tìm phim...">
     </div>
 </nav>
 
@@ -45,100 +51,81 @@
 
 <div id="overlay">
     <div class="p-header">
-        <h3 id="mName" style="margin:0; color:var(--main); font-size: 1.1rem; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></h3>
-        <button onclick="closeP()" style="background:#e74c3c; border:none; color:#fff; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">ĐÓNG [X]</button>
+        <h3 id="mName" style="margin:0; color:var(--main);"></h3>
+        <button onclick="closeP()" style="background:#ff4444; border:none; color:#fff; padding:8px 15px; border-radius:5px; cursor:pointer;">ĐÓNG</button>
     </div>
-    <iframe id="pFrame" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+    <iframe id="pFrame" allowfullscreen></iframe>
     <div id="epList" class="eps"></div>
 </div>
 
 <script>
-    async function loadMovies(keyword = '') {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding: 50px;">Đang quét dữ liệu phim mới...</div>';
-        const sources = ['kkphim', 'nguonc'];
-        let html = '';
+    let currentSource = 'kkphim';
 
-        for (let src of sources) {
-            try {
-                const res = await fetch(`/api/movies?src=${src}&keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
-                // Xử lý dữ liệu trả về linh hoạt cho từng nguồn
-                const items = (src === 'kkphim') ? (res.data?.items || []) : (res.items || []);
-                
-                html += items.map(m => `
-                    <div class="card" onclick="openMovie('${m.slug}', '${src}')">
-                        <span class="badge">${src.toUpperCase()}</span>
-                        <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}" loading="lazy" onerror="this.src='https://placehold.co/300x450?text=No+Poster'">
-                        <div class="card-name">${m.name}</div>
-                    </div>
-                `).join('');
-            } catch (e) { console.error("Lỗi tải nguồn " + src, e); }
-        }
-        grid.innerHTML = html || '<div style="grid-column: 1/-1; text-align:center;">Không tìm thấy phim phù hợp.</div>';
+    function changeSource() {
+        currentSource = document.getElementById('sourceSelect').value;
+        loadMovies(); // Tải lại phim mới của nguồn vừa chọn
     }
 
-    async function openMovie(slug, src) {
-        const overlay = document.getElementById('overlay');
+    async function loadMovies(keyword = '') {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Đang tải từ ' + currentSource.toUpperCase() + '...</p>';
+        
+        try {
+            const res = await fetch(`/api/${currentSource}?keyword=${encodeURIComponent(keyword)}`).then(r => r.json());
+            const items = (currentSource === 'nguonc') ? res.items : (res.data?.items || res.items || []);
+            
+            grid.innerHTML = items.map(m => `
+                <div class="card" onclick="openMovie('${m.slug}')">
+                    <img src="${m.poster_url.includes('http') ? m.poster_url : 'https://phimimg.com/' + m.poster_url}" onerror="this.src='https://placehold.co/200x300'">
+                    <div class="card-name">${m.name}</div>
+                </div>
+            `).join('');
+        } catch (e) {
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Lỗi kết nối proxy ' + currentSource + '</p>';
+        }
+    }
+
+    async function openMovie(slug) {
+        document.getElementById('overlay').style.display = 'flex';
         const epDiv = document.getElementById('epList');
         const iframe = document.getElementById('pFrame');
-        
-        overlay.style.display = 'flex';
-        epDiv.innerHTML = '<div id="loading-text">Đang giải mã danh sách tập phim...</div>';
+        epDiv.innerHTML = 'Đang lấy link...';
         iframe.src = "";
 
         try {
-            const res = await fetch(`/api/movies?src=${src}&path=${slug}`).then(r => r.json());
+            const res = await fetch(`/api/${currentSource}?path=${slug}`).then(r => r.json());
             
-            // SIÊU LOGIC BÓC TÁCH: Tìm kiếm dữ liệu ở mọi vị trí có thể
-            let movie = res.movie || res.data?.item || res;
+            // Logic bóc tách theo nguồn
+            let movie = (currentSource === 'nguonc') ? res.movie : (res.data?.item || res.movie);
             let episodes = movie.episodes || [];
             
-            document.getElementById('mName').innerText = movie.name || "Đang phát";
+            document.getElementById('mName').innerText = movie.name;
             
-            // Tìm server chứa link embed thực tế
-            let list = [];
-            if (episodes.length > 0) {
-                // Ưu tiên server có chứa server_data hoặc items
-                const validServer = episodes.find(sv => (sv.server_data || sv.items || []).length > 0) || episodes[0];
-                list = validServer.server_data || validServer.items || [];
-            }
+            const server = episodes.find(sv => (sv.server_data || sv.items || []).length > 0) || episodes[0];
+            const list = server.server_data || server.items || [];
             
-            if (!list || list.length === 0) throw new Error("Link not found");
-
             epDiv.innerHTML = list.map((e, i) => `
                 <div class="ep-btn ${i===0?'active':''}" onclick="play('${e.link_embed}', this)">Tập ${e.name}</div>
             `).join('');
             
-            // Tự động phát tập 1 khi mở phim
             if(list[0]) play(list[0].link_embed, epDiv.querySelector('.ep-btn'));
-
         } catch (e) {
-            console.error("Lỗi bóc tách:", e);
-            epDiv.innerHTML = '<div style="color:#ff4d4d; text-align:center; width:100%; padding:20px;">Lỗi: Nguồn ' + src.toUpperCase() + ' chưa cập nhật link hoặc đang bảo trì!</div>';
+            epDiv.innerHTML = '<p style="color:red">Lỗi bóc tách link!</p>';
         }
     }
 
     function play(url, btn) {
-        if(!url) return alert("Không tìm thấy link phát cho tập này!");
-        // Cập nhật link vào iframe player gốc
         document.getElementById('pFrame').src = url;
-        
-        // Cập nhật trạng thái nút bấm
         document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
     }
 
     function closeP() {
         document.getElementById('overlay').style.display = 'none';
-        document.getElementById('pFrame').src = ""; // Xóa link khi đóng để dừng phim hoàn toàn
+        document.getElementById('pFrame').src = ""; // Dừng phim để tránh lag
     }
 
-    // Xử lý tìm kiếm khi nhấn Enter
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if(e.key === 'Enter') loadMovies(e.target.value);
-    });
-
-    // Tải phim mới cập nhật khi trang web vừa mở
+    document.getElementById('searchInput').onkeypress = (e) => { if(e.key==='Enter') loadMovies(e.target.value); };
     window.onload = () => loadMovies();
 </script>
 </body>
