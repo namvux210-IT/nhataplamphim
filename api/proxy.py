@@ -6,46 +6,49 @@ import functools
 app = Flask(__name__)
 CORS(app)
 
-# Cache kết quả API trong bộ nhớ để Android TV tải nhanh hơn
-@functools.lru_cache(maxsize=100)
-def get_data(url):
+@functools.lru_cache(maxsize=128)
+def get_ophim_data(url):
     headers = {"accept": "application/json", "User-Agent": "Mozilla/5.0"}
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        return response.json()
+        r = requests.get(url, headers=headers, timeout=10)
+        return r.json()
     except:
         return None
 
 @app.route('/api/proxy')
-def proxy_handler():
+def handle():
     kw = request.args.get('keyword', '')
     slug = request.args.get('path', '')
-    
-    # Sử dụng đúng mẫu URL tìm kiếm bạn cung cấp
-    if slug:
+    cat = request.args.get('category', '')
+    genres = request.args.get('genres', '') # Lấy danh sách thể loại
+
+    # Phân loại URL theo đúng yêu cầu của bạn
+    if genres:
+        url = "https://ophim1.com/v1/api/the-loai"
+    elif cat:
+        url = f"https://ophim1.com/v1/api/the-loai/{cat}"
+    elif slug:
         url = f"https://ophim1.com/v1/api/phim/{slug}"
     elif kw:
         url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}"
     else:
         url = "https://ophim1.com/v1/api/danh-sach/phim-moi-cap-nhat?page=1"
 
-    data = get_data(url)
-    if not data:
-        return jsonify({"status": False, "message": "API Ophim không phản hồi"})
+    data = get_ophim_data(url)
+    if not data: return jsonify({"status": False})
 
-    # FIX LỖI POSTER: Tự động thêm domain nếu thiếu
-    img_domain = "https://img.phimapi.com/"
-    
+    # Fix lỗi Poster thiếu domain
+    domain = "https://img.phimapi.com/"
     if 'data' in data:
-        # Nếu là danh sách phim (Tìm kiếm/Mới cập nhật)
-        if 'items' in data['data']:
-            for item in data['data']['items']:
-                if item.get('poster_url') and not str(item['poster_url']).startswith('http'):
-                    item['poster_url'] = f"{img_domain}{item['poster_url']}"
-        # Nếu là chi tiết bộ phim
-        if 'item' in data['data']:
-            item = data['data']['item']
+        items = data['data'].get('items', [])
+        item = data['data'].get('item')
+        
+        if items:
+            for i in items:
+                if i.get('poster_url') and not str(i['poster_url']).startswith('http'):
+                    i['poster_url'] = f"{domain}{i['poster_url']}"
+        if item:
             if item.get('poster_url') and not str(item['poster_url']).startswith('http'):
-                item['poster_url'] = f"{img_domain}{item['poster_url']}"
-
+                item['poster_url'] = f"{domain}{item['poster_url']}"
+                
     return jsonify(data)
