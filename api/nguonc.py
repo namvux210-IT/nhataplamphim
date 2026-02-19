@@ -7,11 +7,16 @@ CORS(app)
 
 @app.route('/api/nguonc')
 def handle():
-    slug, kw = request.args.get('path'), request.args.get('keyword')
-    if slug: url = f"https://phim.nguonc.com/api/film/{slug}"
-    elif kw: url = f"https://phim.nguonc.com/api/films/search?keyword={kw}"
-    else: url = "https://phim.nguonc.com/api/films/phim-moi-cap-nhat"
+    kw = request.args.get('keyword', '')
+    slug = request.args.get('path', '')
+    
+    if slug:
+        url = f"https://phim.nguonc.com/api/film/{slug}"
+    else:
+        # NguonC dùng /films/search theo link mẫu của bạn
+        url = f"https://phim.nguonc.com/api/films/search?keyword={kw}"
+    
     try:
         return jsonify(requests.get(url, timeout=10).json())
     except:
-        return jsonify({"status": False})
+        return jsonify({"data": []})
