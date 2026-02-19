@@ -14,14 +14,13 @@ def get_ophim_data(url):
 
 @app.route('/api/proxy')
 def handle():
-    # Tách biệt tham số để tránh lỗi 404
     slug = request.args.get('path', '').strip()
     kw = request.args.get('keyword', '').strip()
 
     if slug:
         data = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}")
         if data and 'data' in data:
-            # Lấy ảnh chuẩn từ endpoint /images
+            # Lấy ảnh chuẩn có đầy đủ domain
             img_res = get_ophim_data(f"https://ophim1.com/v1/api/phim/{slug}/images")
             if img_res and img_res.get('status'):
                 img_info = img_res.get('data', {})
