@@ -5,8 +5,8 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+# Chỉ giữ lại 2 nguồn bạn yêu cầu
 SOURCES = {
-    "ophim": "https://ophim1.com/api/v1",
     "kkphim": "https://phimapi.com",
     "nguonc": "https://phim.nguonc.com/api"
 }
@@ -14,7 +14,7 @@ SOURCES = {
 def fetch_json(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://phimapi.com/" # Cần thiết cho KKPhim
+        "Referer": "https://phimapi.com/"
     }
     try:
         resp = requests.get(url, headers=headers, timeout=10)
@@ -24,13 +24,13 @@ def fetch_json(url):
 
 @app.route('/api/movies')
 def handle_request():
-    src = request.args.get('src', 'ophim')
+    src = request.args.get('src', 'kkphim')
     path = request.args.get('path', '')
     keyword = request.args.get('keyword', '')
     page = request.args.get('page', '1')
     
     base = SOURCES.get(src)
-    if not base: return jsonify({"error": "Invalid source"})
+    if not base: return jsonify({"error": "Nguồn không hợp lệ"})
 
     # Lấy chi tiết phim
     if path:
@@ -39,11 +39,12 @@ def handle_request():
     
     # Tìm kiếm phim
     if keyword:
-        if src == "nguonc": url = f"{base}/films/search?keyword={keyword}&page={page}"
-        elif src == "kkphim": url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
-        else: url = f"{base}/tim-kiem?keyword={keyword}&page={page}"
+        if src == "nguonc": 
+            url = f"{base}/films/search?keyword={keyword}&page={page}"
+        else: 
+            url = f"{base}/v1/api/tim-kiem?keyword={keyword}&page={page}"
         return jsonify(fetch_json(url))
         
-    # Phim mới cập nhật
+    # Phim mới cập nhật mặc định
     url = f"{base}/films/phim-moi-cap-nhat?page={page}" if src == "nguonc" else f"{base}/danh-sach/phim-moi-cap-nhat?page={page}"
     return jsonify(fetch_json(url))
