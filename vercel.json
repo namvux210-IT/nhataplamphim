@@ -1,3 +1,7 @@
 {
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index.py" }]
+  "rewrites": [
+    { "source": "/api/kkphim", "destination": "/api/kkphim.py" },
+    { "source": "/api/nguonc", "destination": "/api/nguonc.py" },
+    { "source": "/api/ophim", "destination": "/api/ophim.py" }
+  ]
 }
