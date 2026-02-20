@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
 
-app = Flask(name)
+app = Flask(__name__)
 CORS(app)
 
 CDN_URL = "https://img.ophim.live/uploads/movies"
@@ -39,3 +39,6 @@ def handle():
             if i.get('thumb_url') and not str(i['thumb_url']).startswith('http'):
                 i['thumb_url'] = f"{CDN_URL}/{i['thumb_url']}"
     return jsonify(data or {"status": False})
+
+if __name__ == '__main__':
+    app.run(debug=True)
