@@ -6,6 +6,7 @@ app = Flask(__name__)
 CORS(app)
 
 CDN_URL = "https://img.ophim.live/uploads/movies"
+BASE_URL = "https://ophim1.com/v1/api"
 
 def get_data(url):
     try:
@@ -17,9 +18,13 @@ def get_data(url):
 def handle():
     slug = request.args.get('path', '').strip()
     kw = request.args.get('keyword', '').strip()
+    cat = request.args.get('cat', '').strip()     # Thể loại
+    nat = request.args.get('nation', '').strip()  # Quốc gia
+    year = request.args.get('year', '').strip()   # Năm
     
+    # 1. Chi tiết phim (Giữ nguyên lõi cũ để không lỗi)
     if slug:
-        data = get_data(f"https://ophim1.com/v1/api/phim/{slug}")
+        data = get_data(f"{BASE_URL}/phim/{slug}")
         if data and 'data' in data:
             item = data['data']['item']
             if item.get('poster_url') and not item['poster_url'].startswith('http'):
@@ -28,17 +33,30 @@ def handle():
                 item['thumb_url'] = f"{CDN_URL}/{item['thumb_url']}"
         return jsonify(data or {"status": False})
 
-    # Xử lý tìm kiếm hoặc danh sách phim mới
-    url = f"https://ophim1.com/v1/api/tim-kiem?keyword={kw}" if kw else "https://ophim1.com/v1/api/danh-sach/phim-moi-cap-nhat?page=1"
+    # 2. Xử lý danh sách phim theo phân loại chuẩn Document
+    # Mặc định là phim mới cập nhật
+    url = f"{BASE_URL}/danh-sach/phim-moi-cap-nhat?page=1"
+    
+    if kw: # Tìm kiếm
+        url = f"{BASE_URL}/tim-kiem?keyword={kw}"
+    elif cat: # Theo thể loại: /the-loai/{slug}
+        url = f"{BASE_URL}/the-loai/{cat}?page=1"
+    elif nat: # Theo quốc gia: /quoc-gia/{slug}
+        url = f"{BASE_URL}/quoc-gia/{nat}?page=1"
+    elif year: # Theo năm: /danh-sach/phim-moi?year={year}
+        url = f"{BASE_URL}/danh-sach/phim-moi?year={year}&page=1"
+
     data = get_data(url)
+    
+    # Chuẩn hóa URL ảnh cho tất cả danh sách để hiện poster
     if data and 'data' in data and 'items' in data['data']:
         for i in data['data']['items']:
-            p = i.get('poster_url') or i.get('thumb_url')
-            if i.get('poster_url') and not str(i['poster_url']).startswith('http'):
-                i['poster_url'] = f"{CDN_URL}/{i['poster_url']}"
-            if i.get('thumb_url') and not str(i['thumb_url']).startswith('http'):
-                i['thumb_url'] = f"{CDN_URL}/{i['thumb_url']}"
+            for key in ['poster_url', 'thumb_url']:
+                val = i.get(key)
+                if val and not val.startswith('http'):
+                    i[key] = f"{CDN_URL}/{val}"
+                    
     return jsonify(data or {"status": False})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5000, debug=True)
