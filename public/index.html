@@ -79,7 +79,7 @@
     async function load(kw = '') {
         const grid = document.getElementById('grid');
         grid.innerHTML = '<p style="text-align:center;width:100%">Đang tải...</p>';
-        const url = kw ? `/api/proxy?keyword=${encodeURIComponent(kw)}` : `/api/proxy`;
+        const url = kw ? `http://127.0.0.1:5000/api/proxy?keyword=${encodeURIComponent(kw)}` : `http://127.0.0.1:5000/api/proxy`;
         try {
             const r = await fetch(url).then(res => res.json());
             const items = r.data?.items || [];
@@ -94,7 +94,7 @@
 
     window.showIntro = async (slug) => {
         try {
-            const r = await fetch(`/api/proxy?path=${slug}`).then(res => res.json());
+            const r = await fetch(`http://127.0.0.1:5000/api/proxy?path=${slug}`).then(res => res.json());
             movieData = r.data.item;
             document.getElementById('iTitle').innerText = movieData.name;
             document.getElementById('iImg').src = movieData.poster_url;
