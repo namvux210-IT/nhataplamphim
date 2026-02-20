@@ -3,67 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOLD CINEMA - MODERN PREMIERE</title>
+    <title>GOLD CINEMA - PREMIUM</title>
     <style>
-        :root { --gold: #FFD700; --bg: #0b0b0b; --card-w: 160px; --glass: rgba(255, 255, 255, 0.1); }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow-x: hidden; scroll-behavior: smooth; }
+        :root { --gold: #FFD700; --bg: #0b0b0b; --card-w: 160px; }
+        @media (max-width: 768px) { :root { --card-w: 130px; } }
         
-        /* Header hiện đại */
-        .nav { padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px); border-bottom: 1px solid #222; }
-        .logo { color: var(--gold); font-size: 26px; font-weight: 900; text-decoration: none; letter-spacing: 1px; }
-        .search-box { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px 20px; border-radius: 30px; outline: none; width: 180px; transition: 0.4s ease; }
-        .search-box:focus { width: 280px; border-color: var(--gold); box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow-x: hidden; }
+        
+        /* Header */
+        .nav { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.85); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px); border-bottom: 1px solid #222; }
+        .logo { color: var(--gold); font-size: 22px; font-weight: 900; text-decoration: none; letter-spacing: 1px; }
+        .search-box { background: #1a1a1a; border: 1px solid #333; color: #fff; padding: 10px 15px; border-radius: 20px; outline: none; width: 150px; transition: 0.3s; }
+        .search-box:focus { border-color: var(--gold); width: 200px; }
 
-        /* Hero Slider hoành tráng */
-        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 85vh; position: relative; background: #000; }
+        /* Hero Slider */
+        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 75vh; position: relative; }
         .hero-slider::-webkit-scrollbar { display: none; }
-        .hero-item { min-width: 100%; scroll-snap-align: start; position: relative; overflow: hidden; }
-        .hero-img { width: 100%; height: 100%; object-fit: cover; transition: transform 10s linear; }
-        .hero-item:hover .hero-img { transform: scale(1.1); }
-        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 10%, transparent 50%), linear-gradient(to right, rgba(0,0,0,0.9) 0%, transparent 70%); }
-        
-        .hero-info { position: absolute; bottom: 15%; left: 5%; max-width: 650px; z-index: 10; padding: 20px; animation: fadeInUp 1s ease; }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .hero-title { font-size: clamp(30px, 6vw, 50px); color: var(--gold); margin: 0; font-weight: 900; text-shadow: 3px 3px 15px rgba(0,0,0,0.8); line-height: 1.1; }
-        .hero-meta { margin: 20px 0; font-size: 15px; display: flex; gap: 20px; color: #eee; font-weight: 500; }
-        .hero-meta span { background: var(--glass); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); }
-        .hero-desc { font-size: 16px; line-height: 1.7; color: #ccc; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 30px; text-shadow: 1px 1px 5px rgba(0,0,0,0.5); }
+        .hero-item { min-width: 100%; scroll-snap-align: start; position: relative; }
+        .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 10%, transparent 60%); }
+        .hero-info { position: absolute; bottom: 10%; left: 5%; right: 5%; z-index: 10; max-width: 600px; }
+        .hero-title { font-size: clamp(24px, 5vw, 45px); color: var(--gold); margin: 0; font-weight: 900; line-height: 1.2; }
+        .hero-desc { font-size: 15px; color: #ccc; margin: 15px 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.6; }
 
-        /* Nút bấm Xem ngay cao cấp */
-        .btn-play-hero { background: var(--gold); color: #000; border: none; padding: 16px 45px; border-radius: 50px; font-weight: 800; font-size: 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; transition: 0.3s; box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3); text-transform: uppercase; }
-        .btn-play-hero:hover { transform: translateY(-3px) scale(1.05); background: #fff; box-shadow: 0 15px 35px rgba(255, 215, 0, 0.5); }
+        /* Nút xem ngay */
+        .btn-play-hero { background: var(--gold); color: #000; border: none; padding: 12px 35px; border-radius: 50px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .btn-play-hero:hover { transform: scale(1.05); background: #fff; }
 
-        /* Hàng phim trượt ngang */
-        .row { padding: 30px 0 10px 5%; }
-        .row-title { font-size: 20px; margin-bottom: 20px; font-weight: 700; display: flex; align-items: center; gap: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .row-title::before { content: ''; width: 5px; height: 24px; background: var(--gold); border-radius: 10px; }
-        .list-wrap { display: flex; overflow-x: auto; gap: 20px; scrollbar-width: none; padding-bottom: 20px; padding-right: 5%; }
+        /* Hàng phim & Grid Tìm kiếm */
+        .row { padding: 25px 0 10px 5%; }
+        .row-title { font-size: 18px; margin-bottom: 15px; font-weight: 700; color: var(--gold); display: flex; align-items: center; gap: 10px; }
+        .row-title::before { content: ''; width: 4px; height: 18px; background: var(--gold); border-radius: 2px; }
+        
+        /* FIX LỖI TÌM KIẾM: Sử dụng flex-wrap cho kết quả tìm kiếm */
+        .list-wrap { display: flex; overflow-x: auto; gap: 15px; scrollbar-width: none; padding-bottom: 15px; }
+        .list-wrap.search-mode { flex-wrap: wrap; overflow-x: hidden; padding-right: 5%; }
         .list-wrap::-webkit-scrollbar { display: none; }
         
-        .card { min-width: var(--card-w); cursor: pointer; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .card:hover { transform: scale(1.08) translateY(-10px); z-index: 5; }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border: 1px solid #222; }
-        .card-t { font-size: 13px; margin-top: 12px; text-align: center; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #ddd; }
+        .card { min-width: var(--card-w); max-width: var(--card-w); cursor: pointer; transition: 0.3s; }
+        .card:hover { transform: translateY(-8px); }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; border: 1px solid #222; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .card-t { font-size: 13px; margin-top: 10px; text-align: center; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Modals (Intro & Player) */
+        /* Modals */
         #intro, #player { position: fixed; inset: 0; z-index: 9999; display: none; }
-        #intro { background: rgba(0,0,0,0.95); align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .box { background: #111; border: 1px solid #333; border-radius: 24px; max-width: 450px; width: 90%; padding: 40px; text-align: center; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
+        #intro { background: rgba(0,0,0,0.9); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .box { background: #151515; border: 1px solid #333; border-radius: 20px; max-width: 400px; width: 85%; padding: 30px; text-align: center; }
         #player { background: #000; flex-direction: column; }
-        .p-head { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #111; border-bottom: 1px solid #222; }
-        iframe { flex: 1; border: none; background: #000; }
-        .eps { display: flex; gap: 12px; padding: 20px; overflow-x: auto; background: #0b0b0b; border-top: 1px solid #222; }
-        .ep-btn { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 10px 20px; border-radius: 8px; white-space: nowrap; cursor: pointer; transition: 0.3s; font-weight: 600; }
-        .ep-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
-        .ep-btn:hover:not(.active) { background: #333; }
+        iframe { flex: 1; border: none; }
+        .eps { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: #111; border-top: 1px solid #222; }
+        .ep-btn { background: #222; color: #fff; border: 1px solid #333; padding: 8px 15px; border-radius: 5px; white-space: nowrap; cursor: pointer; }
+        .ep-btn.active { background: var(--gold); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="nav">
     <a href="/" class="logo">GOLD CINEMA</a>
-    <input type="text" id="search" class="search-box" placeholder="Tìm tên phim...">
+    <input type="text" id="search" class="search-box" placeholder="Tìm kiếm phim...">
 </div>
 
 <div id="hero" class="hero-slider"></div>
@@ -73,40 +70,40 @@
 
 <div id="intro">
     <div class="box">
-        <img id="iImg" style="width:140px; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px;">
-        <h2 id="iTitle" style="margin: 0 0 10px 0; color: var(--gold);"></h2>
-        <div id="iMeta" style="margin-bottom: 25px; color: #aaa; font-size: 14px;"></div>
-        <button class="btn-play-hero" style="width:100%; justify-content: center;" onclick="startPhim()">▶ Bắt đầu xem</button>
-        <p onclick="closeIntro()" style="margin-top: 20px; cursor: pointer; color: #555; font-weight: bold; text-transform: uppercase; font-size: 12px;">Bỏ qua</p>
+        <img id="iImg" style="width:120px; border-radius:10px; margin-bottom:15px;">
+        <h2 id="iTitle" style="margin:0 0 10px 0; color:var(--gold); font-size:20px;"></h2>
+        <div id="iMeta" style="margin-bottom:20px; color:#aaa; font-size:14px;"></div>
+        <button class="btn-play-hero" style="width:100%; justify-content:center;" onclick="startPhim()">▶ XEM NGAY</button>
+        <p onclick="closeIntro()" style="margin-top:20px; cursor:pointer; color:#666; font-size:13px;">ĐÓNG X</p>
     </div>
 </div>
 
 <div id="player">
-    <div class="p-head">
-        <b id="pTitle" style="color: var(--gold); font-size: 16px;"></b>
-        <button onclick="closePlayer()" style="background:#ff4d4d; color:#fff; border:none; padding:8px 18px; border-radius:6px; font-weight:bold; cursor:pointer;">THOÁT X</button>
+    <div style="padding:10px 20px; display:flex; justify-content:space-between; align-items:center; background:#111;">
+        <b id="pTitle" style="color:var(--gold);"></b>
+        <button onclick="closePlayer()" style="background:red; color:#fff; border:none; padding:6px 15px; border-radius:4px; cursor:pointer;">THOÁT</button>
     </div>
     <iframe id="video" allowfullscreen></iframe>
     <div id="eps" class="eps"></div>
 </div>
 
 <script>
-    let activePhim = null;
+    let activeMovie = null;
 
-    // Hàm tạo hàng phim trượt ngang
-    async function addRow(title, apiParams = '') {
+    // Hàm tạo hàng phim (Fix lỗi kích thước ảnh ở đây)
+    async function addRow(title, params = '', isSearch = false) {
         try {
-            const res = await fetch(`/api/proxy?${apiParams}`).then(r => r.json());
+            const res = await fetch(`/api/proxy?${params}`).then(r => r.json());
             const items = res.data?.items || [];
             if(items.length === 0) return;
 
             const rowHtml = `
                 <div class="row">
                     <div class="row-title">${title}</div>
-                    <div class="list-wrap">
+                    <div class="list-wrap ${isSearch ? 'search-mode' : ''}">
                         ${items.map(m => `
                             <div class="card" onclick="showIntro('${m.slug}')">
-                                <img src="${m.poster_url}" loading="lazy" onerror="this.src='https://placehold.co/300x450/111/333?text=PHIM'">
+                                <img src="${m.poster_url}" loading="lazy">
                                 <div class="card-t">${m.name}</div>
                             </div>
                         `).join('')}
@@ -114,101 +111,84 @@
                 </div>
             `;
             document.getElementById('content').innerHTML += rowHtml;
-        } catch(e) { console.error("Lỗi tải hàng:", title); }
+        } catch(e) { console.error("Lỗi:", title); }
     }
 
-    // Khởi tạo trang chủ hiện đại
-    async function initHome() {
-        // 1. Lấy Top 5 phim mới nhất làm Slider đề xuất
-        const latestRes = await fetch('/api/proxy').then(r => r.json());
-        const top5 = latestRes.data.items.slice(0, 5);
+    async function init() {
+        // Load Hero Slider (Top 5)
+        const res = await fetch('/api/proxy').then(r => r.json());
+        const top5 = res.data.items.slice(0, 5);
         
-        // Lấy chi tiết để có phần mô tả (content) cho Slider
-        const heroData = await Promise.all(top5.map(async (m) => {
-            const d = await fetch(`/api/proxy?path=${m.slug}`).then(res => res.json());
+        const heroDetails = await Promise.all(top5.map(async (m) => {
+            const d = await fetch(`/api/proxy?path=${m.slug}`).then(r => r.json());
             return d.data.item;
         }));
 
-        document.getElementById('hero').innerHTML = heroData.map(m => `
+        document.getElementById('hero').innerHTML = heroDetails.map(m => `
             <div class="hero-item">
                 <img src="${m.thumb_url || m.poster_url}" class="hero-img">
                 <div class="hero-overlay"></div>
                 <div class="hero-info">
                     <h2 class="hero-title">${m.name}</h2>
-                    <div class="hero-meta">
-                        <span>⭐ ${m.year}</span>
-                        <span>🎬 ${m.episode_current}</span>
-                        <span>🌍 ${m.country[0].name}</span>
-                    </div>
                     <div class="hero-desc">${m.content.replace(/<[^>]*>/g, '')}</div>
-                    <button class="btn-play-hero" onclick="showIntro('${m.slug}')">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        Xem phim ngay
-                    </button>
+                    <button class="btn-play-hero" onclick="showIntro('${m.slug}')">▶ XEM PHIM</button>
                 </div>
             </div>
         `).join('');
 
-        // Tự động trượt slider mỗi 6 giây
+        // Tự động chuyển slide
         setInterval(() => {
-            const s = document.getElementById('hero');
-            s.scrollLeft += s.offsetWidth;
-            if (s.scrollLeft >= s.scrollWidth - s.offsetWidth) s.scrollLeft = 0;
-        }, 6000);
+            const h = document.getElementById('hero');
+            h.scrollLeft += h.offsetWidth;
+            if (h.scrollLeft >= h.scrollWidth - h.offsetWidth) h.scrollLeft = 0;
+        }, 5000);
 
-        // 2. Load các hàng danh mục phim trượt ngang
-        await addRow('🔥 Phim Mới Cập Nhật');
-        await addRow('⚔️ Hành Động Nghẹt Thở', 'cat=hanh-dong');
-        await addRow('💖 Tình Cảm Đặc Sắc', 'cat=tinh-cam');
-        await addRow('🐉 Cổ Trang Trung Quốc', 'nation=trung-quoc');
-        await addRow('🎭 Drama Hàn Quốc Hot', 'nation=han-quoc');
-        await addRow('⚡ Phim Hoạt Hình', 'cat=hoat-hinh');
+        // Load các danh mục trang chủ
+        await addRow('PHIM MỚI CẬP NHẬT');
+        await addRow('HÀNH ĐỘNG - VÕ THUẬT', 'cat=hanh-dong');
+        await addRow('TÌNH CẢM LÃNG MẠN', 'cat=tinh-cam');
+        await addRow('PHIM TRUNG QUỐC', 'nation=trung-quoc');
     }
 
-    // Logic điều khiển phim (Giữ lõi cũ để không lỗi)
     window.showIntro = async (slug) => {
         const r = await fetch(`/api/proxy?path=${slug}`).then(res => res.json());
-        activePhim = r.data.item;
-        document.getElementById('iTitle').innerText = activePhim.name;
-        document.getElementById('iImg').src = activePhim.poster_url;
-        document.getElementById('iMeta').innerHTML = `Năm: ${activePhim.year} • ${activePhim.episode_current} • ${activePhim.category[0].name}`;
+        activeMovie = r.data.item;
+        document.getElementById('iTitle').innerText = activeMovie.name;
+        document.getElementById('iImg').src = activeMovie.poster_url;
+        document.getElementById('iMeta').innerHTML = `${activeMovie.year} • ${activeMovie.episode_current}`;
         document.getElementById('intro').style.display = 'flex';
         document.body.style.overflow = 'hidden';
     };
 
     window.startPhim = () => {
-        const server = activePhim.episodes[0].server_data;
-        document.getElementById('pTitle').innerText = activePhim.name;
-        document.getElementById('video').src = server[0].link_embed;
-        document.getElementById('eps').innerHTML = server.map((e, i) => `
+        const srv = activeMovie.episodes[0].server_data;
+        document.getElementById('pTitle').innerText = activeMovie.name;
+        document.getElementById('video').src = srv[0].link_embed;
+        document.getElementById('eps').innerHTML = srv.map((e, i) => `
             <button class="ep-btn ${i===0?'active':''}" onclick="changeEp('${e.link_embed}', this)">Tập ${e.name}</button>
         `).join('');
         document.getElementById('intro').style.display = 'none';
         document.getElementById('player').style.display = 'flex';
     };
 
-    window.changeEp = (url, btn) => {
-        document.getElementById('video').src = url;
-        document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    window.changeEp = (u, b) => {
+        document.getElementById('video').src = u;
+        document.querySelectorAll('.ep-btn').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
     };
 
     window.closeIntro = () => { document.getElementById('intro').style.display = 'none'; document.body.style.overflow = 'auto'; };
-    window.closePlayer = () => { 
-        document.getElementById('player').style.display = 'none'; 
-        document.getElementById('video').src = ''; 
-        document.body.style.overflow = 'auto'; 
-    };
+    window.closePlayer = () => { document.getElementById('player').style.display = 'none'; document.getElementById('video').src = ''; document.body.style.overflow = 'auto'; };
 
     document.getElementById('search').onkeypress = (e) => {
         if(e.key === 'Enter') {
             document.getElementById('content').innerHTML = '';
             document.getElementById('hero').style.display = 'none';
-            addRow(`🔍 Kết quả tìm kiếm: "${e.target.value}"`, `keyword=${encodeURIComponent(e.target.value)}`);
+            addRow(`KẾT QUẢ TÌM KIẾM: "${e.target.value}"`, `keyword=${encodeURIComponent(e.target.value)}`, true);
         }
     };
 
-    window.onload = initHome;
+    window.onload = init;
 </script>
 </body>
 </html>
