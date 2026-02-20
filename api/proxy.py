@@ -2,8 +2,10 @@ from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
 
-app = Flask(__name__)
+app = Flask(name)
 CORS(app)
+
+CDN_URL = "https://img.ophim.live/uploads/movies"
 
 def get_data(url):
     try:
@@ -21,7 +23,9 @@ def handle():
         if data and 'data' in data:
             item = data['data']['item']
             if item.get('poster_url') and not item['poster_url'].startswith('http'):
-                item['poster_url'] = f"https://img.phimapi.com/{item['poster_url']}"
+                item['poster_url'] = f"{CDN_URL}/{item['poster_url']}"
+            if item.get('thumb_url') and not item['thumb_url'].startswith('http'):
+                item['thumb_url'] = f"{CDN_URL}/{item['thumb_url']}"
         return jsonify(data or {"status": False})
 
     # Xử lý tìm kiếm hoặc danh sách phim mới
@@ -30,6 +34,8 @@ def handle():
     if data and 'data' in data and 'items' in data['data']:
         for i in data['data']['items']:
             p = i.get('poster_url') or i.get('thumb_url')
-            if p and not str(p).startswith('http'):
-                i['poster_url'] = f"https://img.phimapi.com/{p}"
+            if i.get('poster_url') and not str(i['poster_url']).startswith('http'):
+                i['poster_url'] = f"{CDN_URL}/{i['poster_url']}"
+            if i.get('thumb_url') and not str(i['thumb_url']).startswith('http'):
+                i['thumb_url'] = f"{CDN_URL}/{i['thumb_url']}"
     return jsonify(data or {"status": False})
