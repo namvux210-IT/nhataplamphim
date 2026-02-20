@@ -3,180 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOLD CINEMA - ALL-IN-ONE</title>
+    <title>GOLD CINEMA - NEW UPDATE</title>
     <style>
-        :root { 
-            --gold: #FFD700; 
-            --bg: #0b0b0b; 
-            --card-w: 180px; /* Kích thước chuẩn cho PC/TV */
-        }
-        
-        /* Tối ưu kích thước card cho Tablet và Mobile */
+        :root { --gold: #FFD700; --bg: #0b0b0b; --card-w: 180px; }
         @media (max-width: 1024px) { :root { --card-w: 150px; } }
         @media (max-width: 600px) { :root { --card-w: 120px; } }
 
-        body { 
-            background: var(--bg); 
-            color: #fff; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            margin: 0; 
-            overflow-x: hidden; 
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Nav bar - Responsive */
-        .nav { 
-            padding: 10px 5%; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            background: rgba(0,0,0,0.9); 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            backdrop-filter: blur(15px); 
-            border-bottom: 1px solid #222; 
-        }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow-x: hidden; }
+        
+        /* Nav */
+        .nav { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px); border-bottom: 1px solid #222; }
         .logo { color: var(--gold); font-size: clamp(18px, 4vw, 26px); font-weight: 900; text-decoration: none; }
-        .search-box { 
-            background: #1a1a1a; 
-            border: 2px solid #333; 
-            color: #fff; 
-            padding: 8px 15px; 
-            border-radius: 20px; 
-            outline: none; 
-            width: clamp(100px, 20vw, 250px); 
-            transition: 0.3s;
+        .search-box { background: #1a1a1a; border: 2px solid #333; color: #fff; padding: 8px 15px; border-radius: 20px; outline: none; width: clamp(100px, 20vw, 250px); }
+
+        /* Focus State cho Android TV & Keyboard */
+        .card:focus, .btn-play-hero:focus, .ep-btn:focus, .search-box:focus {
+            outline: none !important; border: 3px solid var(--gold) !important; transform: scale(1.05); z-index: 10;
         }
 
-        /* HỆ THỐNG FOCUS: Dùng cho Android TV Remote & Keyboard PC */
-        .card:focus, .btn-play-hero:focus, .ep-btn:focus, .search-box:focus, .btn-close:focus {
-            outline: none !important;
-            border: 3px solid var(--gold) !important;
-            transform: scale(1.08) !important;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
-            z-index: 100;
-        }
-
-        /* Hero Slider: Chiều cao linh hoạt */
-        .hero-slider { 
-            display: flex; 
-            overflow-x: auto; 
-            scroll-snap-type: x mandatory; 
-            scrollbar-width: none; 
-            height: clamp(300px, 70vh, 800px); 
-            position: relative;
-        }
+        /* Hero Slider (Phim mới cập nhật trong ngày) */
+        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: clamp(350px, 75vh, 850px); position: relative; }
         .hero-slider::-webkit-scrollbar { display: none; }
         .hero-item { min-width: 100%; scroll-snap-align: start; position: relative; overflow: hidden; }
         .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
-        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 15%, transparent 70%); }
-        .hero-info { 
-            position: absolute; 
-            bottom: 10%; 
-            left: 5%; 
-            right: 5%; 
-            z-index: 10; 
-            max-width: 700px; 
-        }
-        .hero-title { font-size: clamp(24px, 5vw, 48px); color: var(--gold); margin: 0; font-weight: 900; text-shadow: 2px 2px 10px #000; }
-        .hero-desc { 
-            font-size: clamp(14px, 2vw, 18px); 
-            color: #ccc; 
-            margin: 15px 0; 
-            line-height: 1.5; 
-            display: -webkit-box; 
-            -webkit-line-clamp: 3; 
-            -webkit-box-orient: vertical; 
-            overflow: hidden; 
-        }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 10%, transparent 80%); }
+        .hero-info { position: absolute; bottom: 12%; left: 5%; right: 5%; z-index: 10; max-width: 800px; }
+        .hero-tag { background: #ff4d4d; color: #fff; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: inline-block; text-transform: uppercase; }
+        .hero-title { font-size: clamp(26px, 5vw, 50px); color: var(--gold); margin: 0; font-weight: 900; }
+        .hero-desc { font-size: clamp(14px, 2vw, 18px); color: #ddd; margin: 15px 0; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 
-        .btn-play-hero { 
-            background: var(--gold); 
-            color: #000; 
-            border: none; 
-            padding: 12px 35px; 
-            border-radius: 8px; 
-            font-weight: 800; 
-            font-size: 16px; 
-            cursor: pointer; 
-            transition: 0.2s;
-        }
+        .btn-play-hero { background: var(--gold); color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-weight: 800; font-size: 16px; cursor: pointer; transition: 0.2s; }
 
-        /* Content Rows */
-        .row { padding: 20px 0 10px 5%; }
-        .row-title { font-size: clamp(16px, 3vw, 22px); margin-bottom: 15px; font-weight: bold; color: var(--gold); text-transform: uppercase; }
-        
-        .list-wrap { 
-            display: flex; 
-            overflow-x: auto; 
-            gap: clamp(10px, 2vw, 20px); 
-            padding: 15px 0; 
-            scrollbar-width: none; 
-        }
+        /* Rows */
+        .row { padding: 30px 0 10px 5%; }
+        .row-title { font-size: clamp(16px, 3vw, 22px); margin-bottom: 15px; font-weight: bold; color: var(--gold); }
+        .list-wrap { display: flex; overflow-x: auto; gap: 15px; padding: 10px 0; scrollbar-width: none; }
         .list-wrap::-webkit-scrollbar { display: none; }
-        
-        /* FIX LỖI TÌM KIẾM: Grid khi search */
-        .list-wrap.search-mode { 
-            flex-wrap: wrap; 
-            overflow-x: hidden; 
-            padding-right: 5%; 
-        }
-        
-        .card { 
-            min-width: var(--card-w); 
-            max-width: var(--card-w); 
-            cursor: pointer; 
-            transition: 0.3s; 
-            border-radius: 10px; 
-            overflow: hidden; 
-            background: #111;
-            border: 2px solid transparent;
-        }
-        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; }
-        .card-t { 
-            font-size: clamp(11px, 1.5vw, 14px); 
-            padding: 10px; 
-            text-align: center; 
-            white-space: nowrap; 
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-        }
+        .list-wrap.search-mode { flex-wrap: wrap; overflow-x: hidden; padding-right: 5%; }
 
-        /* Modals: Đảm bảo phủ kín mọi thiết bị */
+        .card { min-width: var(--card-w); max-width: var(--card-w); cursor: pointer; transition: 0.3s; border-radius: 10px; overflow: hidden; background: #111; }
+        .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
+        .card-t { font-size: 13px; padding: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Modals */
         #intro, #player { position: fixed; inset: 0; z-index: 9999; display: none; }
-        #intro { background: rgba(0,0,0,0.95); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
-        .box { background: #1a1a1a; border: 1px solid #333; border-radius: 20px; max-width: 500px; width: 85%; padding: clamp(20px, 5vw, 40px); text-align: center; }
-        
+        #intro { background: rgba(0,0,0,0.9); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .box { background: #1a1a1a; border: 1px solid #333; border-radius: 20px; max-width: 500px; width: 85%; padding: 30px; text-align: center; }
         #player { background: #000; flex-direction: column; }
-        .p-head { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: #111; }
-        iframe { flex: 1; border: none; background: #000; }
-        
-        .eps { 
-            display: flex; 
-            gap: 10px; 
-            padding: 15px; 
-            overflow-x: auto; 
-            background: #0b0b0b; 
-            border-top: 1px solid #222; 
-        }
-        .ep-btn { 
-            background: #222; 
-            color: #fff; 
-            border: 1px solid #444; 
-            padding: 8px 16px; 
-            border-radius: 5px; 
-            white-space: nowrap; 
-            cursor: pointer; 
-            font-size: 14px;
-        }
+        iframe { flex: 1; border: none; }
+        .eps { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: #111; }
+        .ep-btn { background: #222; color: #fff; border: 1px solid #444; padding: 8px 16px; border-radius: 5px; cursor: pointer; }
         .ep-btn.active { background: var(--gold); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="nav">
-    <a href="/" class="logo" onclick="location.reload()">GOLD CINEMA</a>
+    <a href="/" class="logo">GOLD CINEMA</a>
     <input type="text" id="search" class="search-box" placeholder="Tìm phim..." tabindex="1">
 </div>
 
@@ -186,18 +69,18 @@
 
 <div id="intro">
     <div class="box">
-        <img id="iImg" style="width:130px; border-radius:10px; margin-bottom:15px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);">
-        <h2 id="iTitle" style="color:var(--gold); margin:0 0 10px 0; font-size: clamp(20px, 4vw, 28px);"></h2>
-        <div id="iMeta" style="color:#aaa; font-size:14px; margin-bottom:25px;"></div>
+        <img id="iImg" style="width:130px; border-radius:10px; margin-bottom:15px;">
+        <h2 id="iTitle" style="color:var(--gold); margin:0 0 10px 0;"></h2>
+        <div id="iMeta" style="color:#aaa; font-size:14px; margin-bottom:20px;"></div>
         <button class="btn-play-hero" id="btnStart" tabindex="0" onclick="startPhim()" style="width:100%">XEM PHIM NGAY</button>
-        <button class="btn-close" tabindex="0" onclick="closeIntro()" style="margin-top:20px; background:none; border:none; color:#555; cursor:pointer; font-weight:bold;">ĐÓNG [X]</button>
+        <p onclick="closeIntro()" style="margin-top:20px; cursor:pointer; color:#555; font-weight:bold;">ĐÓNG [X]</p>
     </div>
 </div>
 
 <div id="player">
-    <div class="p-head">
-        <b id="pTitle" style="color:var(--gold); font-size: clamp(14px, 2vw, 18px);"></b>
-        <button class="btn-close" tabindex="0" onclick="closePlayer()" style="background:red; color:#fff; border:none; padding:6px 15px; border-radius:5px; font-weight:bold; cursor:pointer;">THOÁT</button>
+    <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; background:#111;">
+        <b id="pTitle" style="color:var(--gold);"></b>
+        <button onclick="closePlayer()" style="background:red; color:#fff; border:none; padding:8px 20px; border-radius:5px; font-weight:bold; cursor:pointer;">THOÁT</button>
     </div>
     <iframe id="video" allowfullscreen></iframe>
     <div id="eps" class="eps"></div>
@@ -206,83 +89,77 @@
 <script>
     let activeMovie = null;
 
-    // Hàm lấy dữ liệu hàng phim
     async function addRow(title, params = '', isSearch = false) {
         try {
             const res = await fetch(`/api/proxy?${params}`).then(r => r.json());
             const items = res.data?.items || [];
-            if(items.length === 0 && !isSearch) return;
+            if(items.length === 0) return;
 
             const rowHtml = `
                 <div class="row">
                     <div class="row-title">${title}</div>
                     <div class="list-wrap ${isSearch ? 'search-mode' : ''}">
-                        ${items.length > 0 ? items.map(m => `
+                        ${items.map(m => `
                             <div class="card" tabindex="0" onclick="showIntro('${m.slug}')" onkeypress="if(event.key==='Enter') showIntro('${m.slug}')">
-                                <img src="${m.poster_url}" loading="lazy" onerror="this.src='https://placehold.co/300x450/111/333?text=PHIM'">
+                                <img src="${m.poster_url}" loading="lazy">
                                 <div class="card-t">${m.name}</div>
                             </div>
-                        `).join('') : '<p style="padding-left:5%">Không tìm thấy phim phù hợp.</p>'}
+                        `).join('')}
                     </div>
                 </div>
             `;
             document.getElementById('content').innerHTML += rowHtml;
-        } catch(e) { console.error("Lỗi tải danh mục:", title); }
+        } catch(e) { console.error("Lỗi:", title); }
     }
 
-    // Khởi tạo trang
     async function init() {
-        try {
-            const res = await fetch('/api/proxy').then(r => r.json());
-            const top5 = res.data.items.slice(0, 5);
-            
-            const heroData = await Promise.all(top5.map(async (m) => {
-                const d = await fetch(`/api/proxy?path=${m.slug}`).then(r => r.json());
-                return d.data.item;
-            }));
+        // Lấy danh sách phim mới nhất để làm đề xuất
+        const res = await fetch('/api/proxy').then(r => r.json());
+        const newUpdates = res.data.items.slice(0, 5); // Lấy 5 phim mới nhất vừa cập nhật
+        
+        // Fetch chi tiết để có nội dung mô tả
+        const heroData = await Promise.all(newUpdates.map(async (m) => {
+            const d = await fetch(`/api/proxy?path=${m.slug}`).then(r => r.json());
+            return d.data.item;
+        }));
 
-            document.getElementById('hero').innerHTML = heroData.map(m => `
-                <div class="hero-item">
-                    <img src="${m.thumb_url || m.poster_url}" class="hero-img">
-                    <div class="hero-overlay"></div>
-                    <div class="hero-info">
-                        <h1 class="hero-title">${m.name}</h1>
-                        <div class="hero-desc">${m.content.replace(/<[^>]*>/g, '')}</div>
-                        <button class="btn-play-hero" tabindex="0" onclick="showIntro('${m.slug}')">XEM CHI TIẾT</button>
-                    </div>
+        document.getElementById('hero').innerHTML = heroData.map(m => `
+            <div class="hero-item">
+                <img src="${m.thumb_url || m.poster_url}" class="hero-img">
+                <div class="hero-overlay"></div>
+                <div class="hero-info">
+                    <span class="hero-tag">Mới cập nhật hôm nay</span>
+                    <h1 class="hero-title">${m.name}</h1>
+                    <div class="hero-desc">${m.content.replace(/<[^>]*>/g, '')}</div>
+                    <button class="btn-play-hero" tabindex="0" onclick="showIntro('${m.slug}')">XEM CHI TIẾT</button>
                 </div>
-            `).join('');
+            </div>
+        `).join('');
 
-            // Tự động chuyển Slide mỗi 6s
-            setInterval(() => {
-                const h = document.getElementById('hero');
-                if(!h) return;
-                h.scrollLeft += h.offsetWidth;
-                if (h.scrollLeft >= h.scrollWidth - h.offsetWidth) h.scrollLeft = 0;
-            }, 6000);
+        // Tự động chuyển slide
+        setInterval(() => {
+            const h = document.getElementById('hero');
+            h.scrollLeft += h.offsetWidth;
+            if (h.scrollLeft >= h.scrollWidth - h.offsetWidth) h.scrollLeft = 0;
+        }, 7000);
 
-            // Load các hàng phim theo tài liệu API
-            await addRow('🔥 Phim Mới Cập Nhật');
-            await addRow('⚔️ Hành Động & Võ Thuật', 'cat=hanh-dong');
-            await addRow('🐉 Cổ Trang & Thần Thoại', 'nation=trung-quoc');
-            await addRow('💖 Tình Cảm Đặc Sắc', 'cat=tinh-cam');
-            await addRow('🎭 Drama Hàn Quốc', 'nation=han-quoc');
-        } catch(e) { console.error("Lỗi khởi tạo hệ thống"); }
+        // Load các danh mục bên dưới
+        await addRow('🔥 PHIM MỚI CẬP NHẬT TRONG NGÀY');
+        await addRow('⚔️ HÀNH ĐỘNG GAY CẤN', 'cat=hanh-dong');
+        await addRow('🐉 CỔ TRANG - KIẾM HIỆP', 'nation=trung-quoc');
+        await addRow('💖 TÌNH CẢM - TÂM LÝ', 'cat=tinh-cam');
     }
 
-    // Modal Giới thiệu
     window.showIntro = async (slug) => {
         const r = await fetch(`/api/proxy?path=${slug}`).then(res => res.json());
         activeMovie = r.data.item;
         document.getElementById('iTitle').innerText = activeMovie.name;
         document.getElementById('iImg').src = activeMovie.poster_url;
-        document.getElementById('iMeta').innerHTML = `<b>${activeMovie.year}</b> • ${activeMovie.episode_current} • ${activeMovie.category[0].name}`;
+        document.getElementById('iMeta').innerText = `${activeMovie.year} • ${activeMovie.episode_current} • ${activeMovie.category[0].name}`;
         document.getElementById('intro').style.display = 'flex';
         document.getElementById('btnStart').focus();
-        document.body.style.overflow = 'hidden';
     };
 
-    // Chế độ phát phim
     window.startPhim = () => {
         const srv = activeMovie.episodes[0].server_data;
         document.getElementById('pTitle').innerText = activeMovie.name;
@@ -300,19 +177,14 @@
         b.classList.add('active');
     };
 
-    window.closeIntro = () => { document.getElementById('intro').style.display = 'none'; document.body.style.overflow = 'auto'; };
-    window.closePlayer = () => { 
-        document.getElementById('player').style.display = 'none'; 
-        document.getElementById('video').src = ''; 
-        document.body.style.overflow = 'auto'; 
-    };
+    window.closeIntro = () => document.getElementById('intro').style.display = 'none';
+    window.closePlayer = () => { document.getElementById('player').style.display = 'none'; document.getElementById('video').src = ''; };
 
-    // Tìm kiếm
     document.getElementById('search').onkeypress = (e) => {
         if(e.key === 'Enter') {
             document.getElementById('content').innerHTML = '';
             document.getElementById('hero').style.display = 'none';
-            addRow(`🔍 Kết quả tìm kiếm cho: "${e.target.value}"`, `keyword=${encodeURIComponent(e.target.value)}`, true);
+            addRow(`🔍 KẾT QUẢ CHO: "${e.target.value}"`, `keyword=${encodeURIComponent(e.target.value)}`, true);
         }
     };
 
