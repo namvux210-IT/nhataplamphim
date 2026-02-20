@@ -3,90 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GOLD CINEMA - PREMIUM</title>
+    <title>GOLD CINEMA - PREMIUM UI</title>
     <style>
         :root { --gold: #FFD700; --bg: #0b0b0b; --card-w: 180px; }
-        @media (max-width: 1024px) { :root { --card-w: 150px; } }
-        @media (max-width: 600px) { :root { --card-w: 120px; } }
+        @media (max-width: 600px) { :root { --card-w: 130px; } }
 
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; overflow-x: hidden; }
-        
-        /* Navigation Bar */
-        .nav { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.95); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px); border-bottom: 1px solid #222; }
-        .logo { color: var(--gold); font-size: clamp(18px, 4vw, 24px); font-weight: 900; text-decoration: none; cursor: pointer; }
-        .search-box { background: #1a1a1a; border: 2px solid #333; color: #fff; padding: 8px 15px; border-radius: 20px; outline: none; width: clamp(120px, 20vw, 220px); transition: 0.3s; }
-        .search-box:focus { border-color: var(--gold); width: clamp(150px, 25vw, 280px); }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; overflow-x: hidden; }
+        .nav { padding: 10px 5%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.9); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(10px); }
+        .logo { color: var(--gold); font-size: 24px; font-weight: 900; text-decoration: none; }
+        .search-box { background: #1a1a1a; border: 2px solid #333; color: #fff; padding: 8px 15px; border-radius: 20px; outline: none; width: 180px; }
 
-        /* Focus State cho Android TV Remote */
+        /* Focus cho Android TV Remote */
         .card:focus, .btn-hero:focus, .ep-btn:focus, .search-box:focus {
             outline: none !important; border: 3px solid var(--gold) !important; transform: scale(1.05); z-index: 10;
         }
 
-        /* Hero Slider (Phim Đề Xuất) */
-        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 75vh; min-height: 450px; background: #000; }
+        /* Hero Slider Hiện Đại */
+        .hero-slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 70vh; min-height: 400px; }
         .hero-slider::-webkit-scrollbar { display: none; }
-        .hero-item { min-width: 100%; scroll-snap-align: start; position: relative; overflow: hidden; }
+        .hero-item { min-width: 100%; scroll-snap-align: start; position: relative; }
         .hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.4; }
-        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 15%, transparent 85%); }
-        .hero-info { position: absolute; bottom: 10%; left: 5%; right: 5%; z-index: 10; max-width: 850px; }
-        .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; font-size: 13px; font-weight: bold; }
-        .hero-meta span { background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,215,0,0.4); color: #fff; }
-        .hero-title { font-size: clamp(28px, 6vw, 55px); color: var(--gold); margin: 0; font-weight: 900; line-height: 1.1; }
-        .hero-desc { font-size: clamp(14px, 2vw, 17px); color: #ccc; margin: 15px 0 25px 0; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .btn-hero { background: var(--gold); color: #000; border: none; padding: 15px 45px; border-radius: 8px; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 10%, transparent 90%); }
+        .hero-info { position: absolute; bottom: 10%; left: 5%; right: 5%; max-width: 800px; }
+        .hero-title { font-size: clamp(30px, 5vw, 50px); color: var(--gold); margin: 0; font-weight: 900; }
+        .hero-meta { display: flex; gap: 10px; margin: 15px 0; font-size: 14px; font-weight: bold; }
+        .hero-meta span { background: rgba(255,215,0,0.2); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--gold); }
+        .hero-desc { color: #ccc; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 20px; }
+        .btn-hero { background: var(--gold); color: #000; border: none; padding: 12px 35px; border-radius: 6px; font-weight: 800; cursor: pointer; }
 
-        /* Phân loại phim theo hàng (Rows) */
-        .row { padding: 30px 0 10px 5%; }
-        .row-title { font-size: clamp(18px, 3vw, 24px); margin-bottom: 15px; font-weight: bold; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
+        /* Rows Phim lướt ngang */
+        .row { padding: 25px 0 0 5%; }
+        .row-title { font-size: 20px; color: var(--gold); font-weight: bold; margin-bottom: 15px; text-transform: uppercase; }
         .list-wrap { display: flex; overflow-x: auto; gap: 15px; padding-bottom: 20px; scrollbar-width: none; }
         .list-wrap::-webkit-scrollbar { display: none; }
-        .list-wrap.search-mode { flex-wrap: wrap; overflow-x: hidden; padding-right: 5%; }
-
-        .card { min-width: var(--card-w); max-width: var(--card-w); cursor: pointer; transition: 0.3s; border-radius: 10px; overflow: hidden; background: #111; border: 2px solid transparent; }
-        .card:hover { transform: translateY(-8px); border-color: var(--gold); }
+        .card { min-width: var(--card-w); max-width: var(--card-w); cursor: pointer; transition: 0.3s; border-radius: 8px; overflow: hidden; background: #111; }
         .card img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-        .card-t { font-size: 13px; padding: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .card-t { font-size: 13px; padding: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Modals */
+        /* Modal & Player */
         #intro, #player { position: fixed; inset: 0; z-index: 9999; display: none; }
-        #intro { background: rgba(0,0,0,0.95); align-items: center; justify-content: center; backdrop-filter: blur(15px); }
-        .box { background: #1a1a1a; border: 1px solid #333; border-radius: 20px; max-width: 480px; width: 85%; padding: 35px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        #iMetaBox { text-align: left; background: #111; padding: 18px; border-radius: 12px; margin: 20px 0; font-size: 14px; line-height: 1.8; color: #bbb; border-left: 5px solid var(--gold); }
-        #iMetaBox b { color: var(--gold); }
-
+        #intro { background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
+        .box { background: #1a1a1a; border-radius: 20px; max-width: 450px; width: 90%; padding: 30px; text-align: center; }
         #player { background: #000; flex-direction: column; }
-        .p-head { padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; background: #111; border-bottom: 1px solid #222; }
-        iframe { flex: 1; border: none; background: #000; }
-        .eps { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: #0b0b0b; }
-        .ep-btn { background: #222; color: #fff; border: 1px solid #444; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 14px; white-space: nowrap; transition: 0.2s; }
-        .ep-btn.active { background: var(--gold); color: #000; font-weight: bold; border-color: var(--gold); }
+        iframe { flex: 1; border: none; }
+        .eps { display: flex; gap: 10px; padding: 15px; overflow-x: auto; background: #111; }
+        .ep-btn { background: #222; color: #fff; border: 1px solid #444; padding: 10px 20px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+        .ep-btn.active { background: var(--gold); color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="nav">
-    <a href="/" class="logo" onclick="location.reload()">GOLD CINEMA</a>
-    <input type="text" id="search" class="search-box" placeholder="Tìm phim..." tabindex="1">
+    <a href="#" class="logo" onclick="location.reload()">GOLD CINEMA</a>
+    <input type="text" id="search" class="search-box" placeholder="Tìm kiếm phim..." tabindex="1">
 </div>
 
 <div id="hero" class="hero-slider"></div>
-
 <div id="content"></div>
 
 <div id="intro">
     <div class="box">
-        <img id="iImg" style="width:130px; border-radius:12px; margin-bottom:15px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);">
-        <h2 id="iTitle" style="color:var(--gold); margin:0; font-size: 26px;"></h2>
-        <div id="iMetaBox"></div>
-        <button class="btn-hero" id="btnStart" tabindex="0" onclick="startPhim()" style="width:100%">▶ XEM PHIM NGAY</button>
-        <p onclick="closeIntro()" style="margin-top:20px; cursor:pointer; color:#666; font-weight:bold; font-size:13px;">[ QUAY LẠI ]</p>
+        <img id="iImg" style="width:120px; border-radius:10px; margin-bottom:15px;">
+        <h2 id="iTitle" style="color:var(--gold); margin:0;"></h2>
+        <div id="iMeta" style="margin:20px 0; text-align: left; font-size: 14px; color: #bbb; line-height: 1.8;"></div>
+        <button class="btn-hero" id="btnStart" tabindex="0" onclick="startPhim()" style="width:100%">XEM PHIM NGAY</button>
+        <p onclick="closeIntro()" style="margin-top:20px; cursor:pointer; font-weight:bold; color:#555;">[ ĐÓNG ]</p>
     </div>
 </div>
 
 <div id="player">
-    <div class="p-head">
-        <b id="pTitle" style="color:var(--gold); font-size: 16px;"></b>
-        <button onclick="closePlayer()" style="background:#ff4d4d; color:#fff; border:none; padding:8px 25px; border-radius:6px; font-weight:bold; cursor:pointer;">THOÁT [X]</button>
+    <div style="padding:15px; display:flex; justify-content:space-between; align-items:center; background:#111;">
+        <b id="pTitle" style="color:var(--gold);"></b>
+        <button onclick="closePlayer()" style="background:red; color:#fff; border:none; padding:8px 20px; border-radius:5px; cursor:pointer;">THOÁT</button>
     </div>
     <iframe id="video" allowfullscreen></iframe>
     <div id="eps" class="eps"></div>
@@ -95,8 +83,7 @@
 <script>
     let activeMovie = null;
 
-    // Hàm gọi phim cho từng danh mục
-    async function addRow(title, params = '', isSearch = false) {
+    async function addRow(title, params = '') {
         try {
             const res = await fetch(`/api/proxy?${params}`).then(r => r.json());
             const items = res.data?.items || [];
@@ -105,10 +92,10 @@
             const rowHtml = `
                 <div class="row">
                     <div class="row-title">${title}</div>
-                    <div class="list-wrap ${isSearch ? 'search-mode' : ''}">
+                    <div class="list-wrap">
                         ${items.map(m => `
-                            <div class="card" tabindex="0" onclick="showIntro('${m.slug}')" onkeypress="if(event.key==='Enter') showIntro('${m.slug}')">
-                                <img src="${m.poster_url}" loading="lazy" onerror="this.src='https://placehold.co/300x450/111/333?text=GOLD+CINEMA'">
+                            <div class="card" tabindex="0" onclick="showIntro('${m.slug}')">
+                                <img src="${m.poster_url}" loading="lazy">
                                 <div class="card-t">${m.name}</div>
                             </div>
                         `).join('')}
@@ -116,77 +103,59 @@
                 </div>
             `;
             document.getElementById('content').innerHTML += rowHtml;
-        } catch(e) { console.error("Lỗi danh mục:", title); }
+        } catch(e) {}
     }
 
-    // Khởi tạo trang chủ với phân loại chuẩn
     async function init() {
-        try {
-            // 1. Phim Đề Xuất (Slider)
-            const res = await fetch('/api/proxy').then(r => r.json());
-            const top5 = res.data.items.slice(0, 5);
-            const heroHtml = await Promise.all(top5.map(async (m) => {
-                const d = await fetch(`/api/proxy?path=${m.slug}`).then(r => r.json());
-                const detail = d.data.item;
-                return `
-                    <div class="hero-item">
-                        <img src="${detail.thumb_url || detail.poster_url}" class="hero-img">
-                        <div class="hero-overlay"></div>
-                        <div class="hero-info">
-                            <div class="hero-meta">
-                                <span>📅 ${detail.year}</span>
-                                <span>🌍 ${detail.country[0]?.name || 'Đa quốc gia'}</span>
-                                <span>🎞️ ${detail.episode_current}</span>
-                                <span>🎭 ${detail.category[0]?.name || 'Phim'}</span>
-                            </div>
-                            <h1 class="hero-title">${detail.name}</h1>
-                            <div class="hero-desc">${detail.content.replace(/<[^>]*>/g, '')}</div>
-                            <button class="btn-hero" tabindex="0" onclick="showIntro('${detail.slug}')">XEM CHI TIẾT</button>
-                        </div>
+        // Hero Slider: Phim mới cập nhật
+        const res = await fetch('/api/proxy').then(r => r.json());
+        const top5 = res.data.items.slice(0, 5);
+        const heroData = await Promise.all(top5.map(async (m) => {
+            const d = await fetch(`/api/proxy?path=${m.slug}`).then(r => r.json());
+            return d.data.item;
+        }));
+
+        document.getElementById('hero').innerHTML = heroData.map(m => `
+            <div class="hero-item">
+                <img src="${m.thumb_url || m.poster_url}" class="hero-img">
+                <div class="hero-overlay"></div>
+                <div class="hero-info">
+                    <div class="hero-meta">
+                        <span>🌍 ${m.country[0]?.name}</span>
+                        <span>🎞️ ${m.episode_current}</span>
+                        <span>📅 ${m.year}</span>
                     </div>
-                `;
-            }));
-            document.getElementById('hero').innerHTML = heroHtml.join('');
+                    <h1 class="hero-title">${m.name}</h1>
+                    <p class="hero-desc">${m.content.replace(/<[^>]*>/g, '')}</p>
+                    <button class="btn-hero" tabindex="0" onclick="showIntro('${m.slug}')">XEM NGAY</button>
+                </div>
+            </div>
+        `).join('');
 
-            // Tự động chuyển phim đề xuất
-            setInterval(() => {
-                const h = document.getElementById('hero');
-                if(h) {
-                    if (h.scrollLeft >= h.scrollWidth - h.offsetWidth) h.scrollLeft = 0;
-                    else h.scrollLeft += h.offsetWidth;
-                }
-            }, 9000);
-
-            // 2. PHÂN LOẠI DANH MỤC PHIM CHUẨN
-            await addRow('🔥 Phim Mới Cập Nhật', 'page=1');
-            await addRow('⚔️ Hành Động & Võ Thuật', 'cat=hanh-dong');
-            await addRow('💖 Tình Cảm & Lãng Mạn', 'cat=tinh-cam');
-            await addRow('🐉 Cổ Trang Trung Quốc', 'nation=trung-quoc');
-            await addRow('🎭 Drama Hàn Quốc', 'nation=han-quoc');
-            await addRow('🧸 Hoạt Hình & Anime', 'cat=hoat-hinh');
-            await addRow('👻 Kinh Dị & Huyền Bí', 'cat=kinh-di');
-            await addRow('🌍 Phim Âu Mỹ', 'nation=au-my');
-
-        } catch(e) { console.error("Lỗi khởi tạo ứng dụng"); }
+        // CÁC DANH MỤC PHÂN LOẠI CHUẨN
+        await addRow('🔥 Mới Cập Nhật', '');
+        await addRow('⚔️ Phim Hành Động', 'cat=hanh-dong');
+        await addRow('💖 Phim Tình Cảm', 'cat=tinh-cam');
+        await addRow('🐉 Phim Trung Quốc', 'nation=trung-quoc');
+        await addRow('🎭 Phim Hàn Quốc', 'nation=han-quoc');
+        await addRow('📅 Cực Phẩm 2024', 'year=2024');
     }
 
-    // Hiển thị giới thiệu phim (Modal)
     window.showIntro = async (slug) => {
         const r = await fetch(`/api/proxy?path=${slug}`).then(res => res.json());
         activeMovie = r.data.item;
         document.getElementById('iTitle').innerText = activeMovie.name;
         document.getElementById('iImg').src = activeMovie.poster_url;
-        document.getElementById('iMetaBox').innerHTML = `
-            • Quốc gia: <b>${activeMovie.country.map(c => c.name).join(', ')}</b><br>
-            • Thể loại: <b>${activeMovie.category.map(c => c.name).join(', ')}</b><br>
-            • Năm sản xuất: <b>${activeMovie.year}</b><br>
-            • Trạng thái: <b>${activeMovie.episode_current}</b>
+        document.getElementById('iMeta').innerHTML = `
+            Quốc gia: <b>${activeMovie.country[0]?.name}</b><br>
+            Thể loại: <b>${activeMovie.category.map(c => c.name).join(', ')}</b><br>
+            Số tập: <b>${activeMovie.episode_current}</b><br>
+            Năm: <b>${activeMovie.year}</b>
         `;
         document.getElementById('intro').style.display = 'flex';
         document.getElementById('btnStart').focus();
     };
 
-    // Bắt đầu xem phim
     window.startPhim = () => {
         const srv = activeMovie.episodes[0].server_data;
         document.getElementById('pTitle').innerText = activeMovie.name;
@@ -205,17 +174,13 @@
     };
 
     window.closeIntro = () => document.getElementById('intro').style.display = 'none';
-    window.closePlayer = () => {
-        document.getElementById('player').style.display = 'none';
-        document.getElementById('video').src = '';
-    };
+    window.closePlayer = () => { document.getElementById('player').style.display = 'none'; document.getElementById('video').src = ''; };
 
-    // Xử lý Tìm kiếm
     document.getElementById('search').onkeypress = (e) => {
         if(e.key === 'Enter') {
             document.getElementById('content').innerHTML = '';
             document.getElementById('hero').style.display = 'none';
-            addRow(`🔍 Kết quả tìm kiếm: "${e.target.value}"`, `keyword=${encodeURIComponent(e.target.value)}`, true);
+            addRow(`🔍 Kết quả cho: "${e.target.value}"`, `keyword=${encodeURIComponent(e.target.value)}`);
         }
     };
 
