@@ -1,15 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/proxy.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/proxy.py"
-    }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/proxy.py" }
   ]
 }
