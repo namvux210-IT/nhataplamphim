@@ -237,6 +237,42 @@ body{background:var(--bg);color:#fff;font-family:'Segoe UI',system-ui,sans-serif
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════
+     MAINTENANCE MODE — Xóa khối này để mở lại web
+═══════════════════════════════════════ -->
+<div id="maintenance-screen" style="
+  position:fixed;inset:0;z-index:99999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#080810;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;
+  text-align:center;padding:24px;
+">
+  <div style="font-size:56px;margin-bottom:18px;">&#128736;&#65039;</div>
+  <div style="font-size:clamp(20px,4vw,30px);font-weight:900;margin-bottom:12px;color:#FFD700;">
+    Website đang bảo trì
+  </div>
+  <div style="max-width:480px;color:rgba(255,255,255,.65);line-height:1.7;font-size:15px;margin-bottom:22px;">
+    KhoPhimChat hiện đang tạm đóng cửa để nâng cấp và bảo trì hệ thống.
+    Chúng tôi sẽ quay lại sớm nhất có thể. Xin lỗi vì sự bất tiện này!
+  </div>
+  <div style="
+    background:rgba(255,215,0,.09);border:1px solid rgba(255,215,0,.28);
+    border-radius:12px;padding:14px 22px;font-size:14px;color:rgba(255,255,255,.85);
+  ">
+    Có thắc mắc hoặc cần giải đáp, vui lòng liên hệ admin:
+    <br>
+    <a href="mailto:admin@khophimchat.com" style="color:#FFD700;text-decoration:none;font-weight:700;">
+      admin@khophimchat.com
+    </a>
+  </div>
+</div>
+<style>
+  /* Khi bật bảo trì, ẩn cuộn trang gốc phía sau */
+  body:has(#maintenance-screen){overflow:hidden;height:100vh;}
+</style>
+<!-- ═══════════════════════════════════════
+     Hết khối MAINTENANCE MODE
+═══════════════════════════════════════ -->
+
 <nav class="nav">
   <a href="#" class="logo" onclick="location.reload()">KhoPhim<span>Chat</span></a>
   <div class="nav-center">
