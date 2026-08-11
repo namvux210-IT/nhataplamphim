@@ -26,6 +26,10 @@ GHI CHÚ QUAN TRỌNG VỀ ĐỘ TIN CẬY DỮ LIỆU:
      giản hơn: mở thẳng ?debug=1 (ví dụ .../api/proxy?path=slug&source=
      nguonc&debug=1) để xem field "_raw" — chính là JSON gốc chưa chỉnh sửa
      mà nguồn trả về, khỏi cần mở DevTools.
+  => Muốn kiểm tra NHANH cả 3 nguồn có đang "sống" không (bị chặn bot,
+     sập, đổi domain...): mở .../api/proxy?diag=1 — trả về http_status,
+     có parse được JSON không, và số phim lấy được của TỪNG nguồn trong
+     1 lần gọi duy nhất.
 
 Deploy trên Vercel: file này export biến `app` (Flask, chuẩn WSGI) —
 Vercel's Python runtime tự nhận diện và chạy được, xem vercel.json đi kèm.
@@ -39,13 +43,28 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 app = Flask(__name__)
 CORS(app)
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoPhimChat/2.0"}
+HEADERS_BASE = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+}
+REFERER = {
+    "kkphim": "https://phimapi.com/",
+    "nguonc": "https://phim.nguonc.com/",
+    "vsmov": "https://vsmov.com/",
+}
 TIMEOUT = 10
 
 
-def get_json(url):
+def get_json(url, source=None):
+    if not url:
+        return None
+    headers = dict(HEADERS_BASE)
+    if source and REFERER.get(source):
+        headers["Referer"] = REFERER[source]
     try:
-        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+        r = requests.get(url, headers=headers, timeout=TIMEOUT)
         if r.status_code == 200:
             return r.json()
     except Exception:
@@ -66,6 +85,24 @@ SOURCES = {
     "nguonc": {"name": "Nguồn C", "base": NGUONC_BASE},
     "vsmov":  {"name": "VSMOV",   "base": VSMOV_BASE},
 }
+
+# Domain gốc dùng làm tiền tố dự phòng nếu API trả ảnh dạng đường dẫn tương
+# đối (không có http/https ở đầu) — hiếm gặp nhưng vẫn phòng thủ cho chắc.
+SITE_BASE = {
+    "kkphim": "https://phimapi.com",
+    "nguonc": "https://phim.nguonc.com",
+    "vsmov":  "https://vsmov.com",
+}
+
+
+def fix_img(url, source):
+    url = (url or "").strip()
+    if not url:
+        return ""
+    if url.startswith("http://") or url.startswith("https://"):
+        return url
+    base = SITE_BASE.get(source, "")
+    return base + ("" if url.startswith("/") else "/") + url
 
 # type_list dùng cho các nút "Phim Lẻ / Phim Bộ / Hoạt Hình / TV Shows" — tên
 # slug các nguồn không hoàn toàn giống nhau nên map riêng cho từng nguồn.
@@ -179,8 +216,8 @@ def norm_item_ophim_like(raw, source):
         "name": g(raw, "name"),
         "origin_name": g(raw, "origin_name", "original_name"),
         "slug": g(raw, "slug"),
-        "thumb_url": g(raw, "thumb_url"),
-        "poster_url": g(raw, "poster_url", default=g(raw, "thumb_url")),
+        "thumb_url": fix_img(g(raw, "thumb_url"), source),
+        "poster_url": fix_img(g(raw, "poster_url", default=g(raw, "thumb_url")), source),
         "year": g(raw, "year"),
         "quality": g(raw, "quality"),
         "lang": g(raw, "lang", "language"),
@@ -195,8 +232,8 @@ def norm_item_nguonc(raw):
         "name": g(raw, "name", "title"),
         "origin_name": g(raw, "origin_name", "original_name"),
         "slug": g(raw, "slug"),
-        "thumb_url": g(raw, "thumb_url"),
-        "poster_url": g(raw, "poster_url", default=g(raw, "thumb_url")),
+        "thumb_url": fix_img(g(raw, "thumb_url"), "nguonc"),
+        "poster_url": fix_img(g(raw, "poster_url", default=g(raw, "thumb_url")), "nguonc"),
         "year": g(raw, "publish_year", "year"),
         "quality": g(raw, "quality"),
         "lang": g(raw, "language", "lang"),
@@ -237,10 +274,10 @@ def norm_categories(raw, source):
     return out
 
 
-def parse_episodes_ophim_like(raw_item):
-    eps = raw_item.get("episodes") or []
+def parse_episodes_ophim_like(eps):
+    """eps: list các nhóm server, ví dụ [{"server_name":..,"server_data":[...]}]"""
     out = []
-    for sv in eps:
+    for sv in (eps or []):
         data = sv.get("server_data") or sv.get("items") or []
         out.append({
             "server_name": g(sv, "server_name", default="Server"),
@@ -259,12 +296,24 @@ def norm_detail(raw, source, slug):
         return None
 
     if source in ("kkphim", "vsmov"):
-        item = (raw.get("data") or {}).get("item") or raw.get("item") or raw.get("movie")
+        data_wrap = raw.get("data") or {}
+        item = data_wrap.get("item") or raw.get("item") or raw.get("movie")
         if not item:
             return None
         item = dict(item)
         item.setdefault("source", source)
-        item["episodes"] = parse_episodes_ophim_like(item)
+        # QUAN TRỌNG: "episodes" ở API kiểu KKPhim/VSMOV thường nằm NGANG HÀNG
+        # với "movie" (raw["episodes"]), KHÔNG lồng bên trong "movie". Thử lần
+        # lượt mọi vị trí khả dĩ để chắc chắn lấy được tập phim.
+        eps_raw = (
+            raw.get("episodes")
+            or data_wrap.get("episodes")
+            or item.get("episodes")
+            or []
+        )
+        item["episodes"] = parse_episodes_ophim_like(eps_raw)
+        item["thumb_url"] = fix_img(item.get("thumb_url"), source)
+        item["poster_url"] = fix_img(item.get("poster_url") or item.get("thumb_url"), source)
         # category/country đã có sẵn dạng [{name,slug}] theo chuẩn Ophim
         item["category"] = item.get("category") or []
         item["country"] = item.get("country") or []
@@ -315,8 +364,8 @@ def norm_detail(raw, source, slug):
             "origin_name": g(movie, "original_name", "origin_name"),
             "slug": g(movie, "slug", default=slug),
             "content": g(movie, "description", "content"),
-            "thumb_url": g(movie, "thumb_url"),
-            "poster_url": g(movie, "poster_url", default=g(movie, "thumb_url")),
+            "thumb_url": fix_img(g(movie, "thumb_url"), "nguonc"),
+            "poster_url": fix_img(g(movie, "poster_url", default=g(movie, "thumb_url")), "nguonc"),
             "year": g(movie, "publish_year", "year"),
             "quality": g(movie, "quality"),
             "lang": g(movie, "language", "lang"),
@@ -350,19 +399,44 @@ def handle():
     page = request.args.get("page", "1").strip()
     debug = request.args.get("debug") == "1"
 
+    # ── Chẩn đoán nhanh: kiểm tra tình trạng cả 3 nguồn cùng lúc ──
+    # Mở /api/proxy?diag=1 để xem status code + số phim lấy được của từng nguồn.
+    if request.args.get("diag") == "1":
+        result = {}
+        for s in SOURCES:
+            info = {"url": url_home(s, "1")}
+            try:
+                headers = dict(HEADERS_BASE)
+                if REFERER.get(s):
+                    headers["Referer"] = REFERER[s]
+                r = requests.get(info["url"], headers=headers, timeout=TIMEOUT)
+                info["http_status"] = r.status_code
+                try:
+                    j = r.json()
+                    info["json_ok"] = True
+                    info["items_found"] = len(norm_list(j, s))
+                except Exception:
+                    info["json_ok"] = False
+                    info["items_found"] = 0
+                    info["body_preview"] = r.text[:200]
+            except Exception as e:
+                info["error"] = str(e)
+            result[s] = info
+        return jsonify({"status": True, "diag": result})
+
     # ── Danh sách thể loại / quốc gia (để dựng menu động) ──
     if list_meta:
         if list_meta == "the-loai":
-            raw = get_json(url_cat_list(source)) if url_cat_list(source) else None
+            raw = get_json(url_cat_list(source), source) if url_cat_list(source) else None
         elif list_meta == "quoc-gia":
-            raw = get_json(url_country_list(source)) if url_country_list(source) else None
+            raw = get_json(url_country_list(source), source) if url_country_list(source) else None
         else:
             raw = None
         return jsonify({"status": True, "source": source, "data": {"items": norm_categories(raw, source)}})
 
     # ── Chi tiết phim ──
     if slug:
-        raw = get_json(url_detail(source, slug))
+        raw = get_json(url_detail(source, slug), source)
         item = norm_detail(raw, source, slug)
         if not item:
             resp = {"status": False, "source": source}
@@ -379,7 +453,7 @@ def handle():
         if source == "all":
             items = []
             with ThreadPoolExecutor(max_workers=3) as ex:
-                futs = {ex.submit(get_json, url_search(s, kw, page)): s for s in SOURCES}
+                futs = {ex.submit(get_json, url_search(s, kw, page), s): s for s in SOURCES}
                 for fut in as_completed(futs):
                     s = futs[fut]
                     try:
@@ -388,20 +462,20 @@ def handle():
                     except Exception:
                         continue
             return jsonify({"status": True, "source": "all", "data": {"items": items}})
-        raw = get_json(url_search(source, kw, page))
+        raw = get_json(url_search(source, kw, page), source)
         return jsonify({"status": True, "source": source, "data": {"items": norm_list(raw, source)}})
 
     # ── Danh sách theo bộ lọc ──
     if cat:
-        raw = get_json(url_category(source, cat, page))
+        raw = get_json(url_category(source, cat, page), source)
     elif nation:
-        raw = get_json(url_country(source, nation, page))
+        raw = get_json(url_country(source, nation, page), source)
     elif year:
-        raw = get_json(url_year(source, year, page))
+        raw = get_json(url_year(source, year, page), source)
     elif type_list:
-        raw = get_json(url_type_list(source, type_list, page))
+        raw = get_json(url_type_list(source, type_list, page), source)
     else:
-        raw = get_json(url_home(source, page))
+        raw = get_json(url_home(source, page), source)
 
     resp = {"status": True, "source": source, "data": {"items": norm_list(raw, source)}}
     if debug:
