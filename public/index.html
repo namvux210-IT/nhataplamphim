@@ -36,9 +36,27 @@ body{background:var(--bg);color:#fff;font-family:'Segoe UI',system-ui,sans-serif
 }
 .search-box:focus{width:250px;border-color:var(--gold-bd);background:rgba(255,215,0,.07)}
 .search-box::placeholder{color:rgba(255,255,255,.32)}
+.nav-right{display:flex;align-items:center;gap:9px}
+.src-select{
+  background:var(--gl);border:1px solid var(--gl-bd);color:var(--gold);
+  padding:7px 11px;border-radius:22px;outline:none;font-size:13px;font-weight:700;
+  cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;background-size:16px;
+  padding-right:28px;transition:.2s;
+}
+.src-select:hover,.src-select:focus{border-color:var(--gold-bd);background-color:rgba(255,215,0,.07)}
+.src-select option{background:#12121e;color:#fff}
 @media(max-width:720px){
   .nav-center{display:none}
-  .search-box{width:130px}.search-box:focus{width:165px}
+  .search-box{width:120px}.search-box:focus{width:150px}
+  .src-select{padding:7px 24px 7px 9px;font-size:12px}
+}
+.src-tag{
+  position:absolute;top:6px;left:6px;z-index:2;
+  font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;
+  background:rgba(8,8,16,.78);border:1px solid var(--gold-bd);color:var(--gold);
+  letter-spacing:.3px;backdrop-filter:blur(4px);
 }
 
 /* ── HERO ── */
@@ -237,54 +255,19 @@ body{background:var(--bg);color:#fff;font-family:'Segoe UI',system-ui,sans-serif
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════
-     MAINTENANCE MODE — Xóa khối này để mở lại web
-═══════════════════════════════════════ -->
-<div id="maintenance-screen" style="
-  position:fixed;inset:0;z-index:99999;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:#080810;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;
-  text-align:center;padding:24px;
-">
-  <div style="font-size:56px;margin-bottom:18px;">&#128736;&#65039;</div>
-  <div style="font-size:clamp(20px,4vw,30px);font-weight:900;margin-bottom:12px;color:#FFD700;">
-    Website đang bảo trì
-  </div>
-  <div style="max-width:480px;color:rgba(255,255,255,.65);line-height:1.7;font-size:15px;margin-bottom:22px;">
-    KhoPhimChat hiện đang tạm đóng cửa để nâng cấp và bảo trì hệ thống.
-    Chúng tôi sẽ quay lại sớm nhất có thể. Xin lỗi vì sự bất tiện này!
-  </div>
-  <div style="
-    background:rgba(255,215,0,.09);border:1px solid rgba(255,215,0,.28);
-    border-radius:12px;padding:14px 22px;font-size:14px;color:rgba(255,255,255,.85);
-  ">
-    Có thắc mắc hoặc cần giải đáp, vui lòng liên hệ admin:
-    <br>
-    <a href="https://khophimchat.vercel.app/" style="color:#FFD700;text-decoration:none;font-weight:700;">
-      adminkpc@gmail.com
-    </a>
-  </div>
-</div>
-<style>
-  /* Khi bật bảo trì, ẩn cuộn trang gốc phía sau */
-  body:has(#maintenance-screen){overflow:hidden;height:100vh;}
-</style>
-<!-- ═══════════════════════════════════════
-     Hết khối MAINTENANCE MODE
-═══════════════════════════════════════ -->
-
 <nav class="nav">
   <a href="#" class="logo" onclick="location.reload()">KhoPhim<span>Chat</span></a>
-  <div class="nav-center">
-    <button class="nb on" onclick="navFilter(this,'')">Trang Chủ</button>
-    <button class="nb" onclick="navFilter(this,'cat=hanh-dong')">Hành Động</button>
-    <button class="nb" onclick="navFilter(this,'cat=tinh-cam')">Tình Cảm</button>
-    <button class="nb" onclick="navFilter(this,'cat=kinh-di')">Kinh Dị</button>
-    <button class="nb" onclick="navFilter(this,'nation=han-quoc')">Hàn Quốc</button>
-    <button class="nb" onclick="navFilter(this,'nation=trung-quoc')">Trung Quốc</button>
-    <button class="nb" onclick="navFilter(this,'year=2024')">2024</button>
+  <div class="nav-center" id="navCenter">
+    <button class="nb on" onclick="navFilter(this,'','Trang Chủ')">Trang Chủ</button>
   </div>
-  <input type="text" id="search" class="search-box" placeholder="🔍 Tìm kiếm...">
+  <div class="nav-right">
+    <select id="srcSelect" class="src-select" title="Đổi nguồn phim">
+      <option value="kkphim">Nguồn: KKPhim</option>
+      <option value="nguonc">Nguồn: Nguồn C</option>
+      <option value="vsmov">Nguồn: VSMOV</option>
+    </select>
+    <input type="text" id="search" class="search-box" placeholder="🔍 Tìm kiếm mọi nguồn...">
+  </div>
 </nav>
 
 <div class="hero-wrap" id="heroWrap">
@@ -354,6 +337,8 @@ body{background:var(--bg);color:#fff;font-family:'Segoe UI',system-ui,sans-serif
 <script>
 var active=null, hIdx=0, hLen=0, hTimer=null, hSlides=[], hDots=[];
 var isDragging=false, dragStartX=0, dragDelta=0;
+var currentSource=localStorage.getItem('kpc_source')||'kkphim';
+var navDefs=[]; // danh sách [label,params] dựng động từ thể loại/quốc gia
 
 /* ═══════════════════════════════════════
    HERO SLIDER – transform-based + drag
@@ -380,8 +365,8 @@ function buildHero(list){
         (m.origin_name?'<p class="hero-sub">'+m.origin_name+'</p>':'')+
         '<p class="hero-desc">'+((m.content||'').replace(/<[^>]*>/g,''))+'</p>'+
         '<div class="hero-btns">' +
-          '<button class="btn-p" onclick="showIntro(\''+slug+'\')">&#9654; Xem ngay</button>'+
-          '<button class="btn-g" onclick="showIntro(\''+slug+'\')">&#9432; Thông tin</button>'+
+          '<button class="btn-p" onclick="showIntro(\''+slug+'\',\''+currentSource+'\')">&#9654; Xem ngay</button>'+
+          '<button class="btn-g" onclick="showIntro(\''+slug+'\',\''+currentSource+'\')">&#9432; Thông tin</button>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -473,8 +458,8 @@ function initHeroDrag(){
       var slide=hSlides[hIdx];
       var slug=slide?slide.querySelector('.btn-p')?slide.querySelector('.btn-p').getAttribute('onclick'):'':'';
       // extract slug từ onclick string
-      var m=slug.match(/showIntro\('([^']+)'\)/);
-      if(m) showIntro(m[1]);
+      var m=slug.match(/showIntro\('([^']+)','([^']+)'\)/);
+      if(m) showIntro(m[1],m[2]);
     }
   });
 
@@ -490,10 +475,14 @@ function initHeroDrag(){
 /* ═══════════════════════════════════════
    CARDS & ROWS
 ═══════════════════════════════════════ */
-function cardHtml(m){
+var SRC_NAMES={kkphim:'KKPhim',nguonc:'Nguồn C',vsmov:'VSMOV'};
+
+function cardHtml(m,showBadge){
   var poster=m.poster_url||m.thumb_url||'';
-  return '<div class="card" tabindex="0" onclick="showIntro(\''+m.slug+'\')" onkeypress="if(event.key===\'Enter\')showIntro(\''+m.slug+'\')">'+
+  var src=m.source||currentSource;
+  return '<div class="card" tabindex="0" onclick="showIntro(\''+m.slug+'\',\''+src+'\')" onkeypress="if(event.key===\'Enter\')showIntro(\''+m.slug+'\',\''+src+'\')">'+
     '<div class="ciw">'+
+      (showBadge?'<div class="src-tag">'+(SRC_NAMES[src]||src)+'</div>':'')+
       '<img src="'+poster+'" loading="lazy" alt="'+esc(m.name)+'" onerror="this.style.background=\'#1a1a2a\'">'+
       (m.episode_current?'<div class="ep-badge">'+m.episode_current+'</div>':'')+
       '<div class="card-ov"><div class="play-ic"><span style="color:#000;font-size:13px;padding-left:2px">&#9654;</span></div></div>'+
@@ -503,6 +492,8 @@ function cardHtml(m){
 }
 
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+/* Escape an toàn cho chuỗi chèn bên trong onclick="...('...')" */
+function jsEsc(s){return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 
 /* Row scroll-ngang (trang chủ) */
 function skRow(title){
@@ -513,11 +504,12 @@ function skRow(title){
 }
 
 function addRow(title,params,placeholder){
-  return fetch('/api/proxy?'+(params||'')).then(function(r){return r.json();}).then(function(res){
+  var full=(params||'')+'&source='+encodeURIComponent(currentSource);
+  return fetch('/api/proxy?'+full).then(function(r){return r.json();}).then(function(res){
     var items=(res.data&&res.data.items)||[];
     if(!items.length){if(placeholder)placeholder.remove();return;}
     var html='<div class="row-hd"><div class="row-title">'+title+'</div><span class="row-more">Xem thêm &rsaquo;</span></div>'+
-      '<div class="list-wrap">'+items.map(cardHtml).join('')+'</div>';
+      '<div class="list-wrap">'+items.map(function(m){return cardHtml(m,false);}).join('')+'</div>';
     if(placeholder){placeholder.innerHTML=html;}
     else{var d=document.createElement('div');d.className='row';d.innerHTML=html;document.getElementById('content').appendChild(d);}
   }).catch(function(){if(placeholder)placeholder.remove();});
@@ -526,7 +518,7 @@ function addRow(title,params,placeholder){
 /* ═══════════════════════════════════════
    TRANG LỌC – grid nhiều cột + phân trang
 ═══════════════════════════════════════ */
-function showFilterPage(title, params){
+function showFilterPage(title, params, isMultiSource){
   var content=document.getElementById('content');
   var heroWrap=document.getElementById('heroWrap');
   heroWrap.style.display='none';
@@ -540,48 +532,123 @@ function showFilterPage(title, params){
     '</div>';
   content.innerHTML=skHtml;
 
-  fetch('/api/proxy?'+(params||'')).then(function(r){return r.json();}).then(function(res){
+  var full=(params||'')+(isMultiSource?'':'&source='+encodeURIComponent(currentSource));
+  fetch('/api/proxy?'+full).then(function(r){return r.json();}).then(function(res){
     var items=(res.data&&res.data.items)||[];
-    if(!items.length){document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Không tìm thấy phim nào.</p>';return;}
-    document.getElementById('filterGrid').innerHTML=items.map(cardHtml).join('');
-  }).catch(function(){});
+    if(!items.length){document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Không tìm thấy phim nào. Thử đổi nguồn phim khác ở góc trên bên phải nhé.</p>';return;}
+    document.getElementById('filterGrid').innerHTML=items.map(function(m){return cardHtml(m,!!isMultiSource);}).join('');
+  }).catch(function(){
+    document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Có lỗi khi tải dữ liệu, thử lại sau nhé.</p>';
+  });
 }
 
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-function init(){
-  fetch('/api/proxy').then(function(r){return r.json();}).then(function(res){
+/* ═══════════════════════════════════════
+   DỰNG MENU ĐỘNG (Thể loại / Quốc gia)
+   Lấy danh mục cố định từ KKPhim (nguồn ổn định, có endpoint /the-loai
+   và /quoc-gia chính thức) — dùng chung slug để lọc trên bất kỳ nguồn
+   nào đang được chọn, vì cả 3 nguồn đều theo cùng một quy ước đặt slug.
+═══════════════════════════════════════ */
+var CAT_ICONS=['&#9876;&#65039;','&#128150;','&#128123;','&#128105;&#8205;&#127917;','&#128105;&#8205;&#128188;','&#127749;','&#9876;','&#127917;','&#127916;','&#9819;','&#128100;','&#128171;'];
+var NATION_ICONS={'trung-quoc':'&#128009;','han-quoc':'&#127917;','au-my':'&#127760;','nhat-ban':'&#127967;&#65039;','thai-lan':'&#127481;&#127469;','viet-nam':'&#127483;&#127475;'};
+
+function buildDynamicNav(){
+  var navCenter=document.getElementById('navCenter');
+  var reqs=[
+    fetch('/api/proxy?list=the-loai&source=kkphim').then(function(r){return r.json();}).catch(function(){return null;}),
+    fetch('/api/proxy?list=quoc-gia&source=kkphim').then(function(r){return r.json();}).catch(function(){return null;})
+  ];
+  return Promise.all(reqs).then(function(res){
+    var cats=(res[0]&&res[0].data&&res[0].data.items)||[];
+    var nats=(res[1]&&res[1].data&&res[1].data.items)||[];
+    navDefs=[];
+    var html='<button class="nb on" onclick="navFilter(this,\'\',\'Trang Chủ\')">Trang Chủ</button>';
+
+    // Định dạng: Phim Lẻ / Phim Bộ / Hoạt Hình / TV Shows
+    [['phim-le','&#127909; Phim Lẻ'],['phim-bo','&#128250; Phim Bộ'],['hoat-hinh','&#127917; Hoạt Hình'],['tv-shows','&#128250; TV Shows']].forEach(function(t){
+      var params='type='+t[0];
+      navDefs.push([t[1],params]);
+      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\''+t[1].replace(/&#\d+;/g,'').trim()+'\')">'+t[1]+'</button>';
+    });
+
+    // Thể loại (tối đa 8)
+    cats.slice(0,8).forEach(function(c,i){
+      var label=(CAT_ICONS[i%CAT_ICONS.length]+' '+esc(c.name));
+      var params='cat='+c.slug;
+      navDefs.push([label,params]);
+      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\''+jsEsc(c.name)+'\')">'+label+'</button>';
+    });
+
+    // Quốc gia (tối đa 5)
+    nats.slice(0,5).forEach(function(c){
+      var icon=NATION_ICONS[c.slug]||'&#127758;';
+      var label=(icon+' '+esc(c.name));
+      var params='nation='+c.slug;
+      navDefs.push([label,params]);
+      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\''+jsEsc(c.name)+'\')">'+label+'</button>';
+    });
+
+    // Năm phát hành nhanh
+    ['2025','2024','2023'].forEach(function(y){
+      var params='year='+y;
+      navDefs.push(['&#128197; '+y,params]);
+      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\'Năm '+y+'\')">&#128197; '+y+'</button>';
+    });
+
+    navCenter.innerHTML=html;
+  });
+}
+
+/* ═══════════════════════════════════════
+   TRANG CHỦ theo nguồn hiện tại
+═══════════════════════════════════════ */
+function loadHome(){
+  var content=document.getElementById('content');
+  var heroWrap=document.getElementById('heroWrap');
+  heroWrap.style.display='';
+  content.className='rows-wrap';
+  content.innerHTML='';
+
+  fetch('/api/proxy?source='+encodeURIComponent(currentSource)).then(function(r){return r.json();}).then(function(res){
     var items=(res.data&&res.data.items)||[];
+    if(!items.length){
+      content.innerHTML='<p style="color:rgba(255,255,255,.4);text-align:center;padding:80px 0">Nguồn này hiện chưa trả về dữ liệu. Thử đổi sang nguồn khác ở góc trên bên phải nhé.</p>';
+      heroWrap.style.display='none';
+      return;
+    }
     buildHero(items.slice(0,5));
 
-    // Row đầu render ngay từ data có sẵn
     var r0=document.createElement('div');r0.className='row';
     r0.innerHTML='<div class="row-hd"><div class="row-title">&#128293; Mới Cập Nhật</div><span class="row-more">Xem thêm &rsaquo;</span></div>'+
-      '<div class="list-wrap">'+items.map(cardHtml).join('')+'</div>';
-    document.getElementById('content').appendChild(r0);
+      '<div class="list-wrap">'+items.map(function(m){return cardHtml(m,false);}).join('')+'</div>';
+    content.appendChild(r0);
 
-    // Skeleton + fetch song song các row còn lại
-    var defs=[
-      ['&#9876;&#65039; Hành Động','cat=hanh-dong'],
-      ['&#128150; Tình Cảm','cat=tinh-cam'],
-      ['&#128009; Trung Quốc','nation=trung-quoc'],
-      ['&#127917; Hàn Quốc','nation=han-quoc'],
-      ['&#128197; Cực Phẩm 2024','year=2024'],
-    ];
+    // Skeleton + fetch song song các row còn lại, lấy từ menu vừa dựng động
+    var defs=navDefs.filter(function(d){return d[1].indexOf('type=')===0||d[1].indexOf('cat=')===0||d[1].indexOf('nation=')===0;}).slice(0,7);
     var phs=defs.map(function(d){
       var el=skRow(d[0]);
-      document.getElementById('content').appendChild(el);
+      content.appendChild(el);
       return el;
     });
     defs.forEach(function(d,i){addRow(d[0],d[1],phs[i]);});
+  }).catch(function(){
+    content.innerHTML='<p style="color:rgba(255,255,255,.4);text-align:center;padding:80px 0">Không kết nối được tới nguồn này. Thử đổi nguồn khác nhé.</p>';
+    heroWrap.style.display='none';
   });
+}
+
+function init(){
+  document.getElementById('srcSelect').value=currentSource;
+  buildDynamicNav().then(loadHome);
 }
 
 /* ═══════════════════════════════════════
    SHOW INTRO – fix poster loading
 ═══════════════════════════════════════ */
-window.showIntro=function(slug){
+window.showIntro=function(slug,source){
+  source=source||currentSource;
   var modal=document.getElementById('intro');
   modal.style.display='flex';
   // Reset trạng thái loading
@@ -595,9 +662,13 @@ window.showIntro=function(slug){
   document.getElementById('iBanner').src='';
   document.getElementById('iPoster').src='';
 
-  fetch('/api/proxy?path='+encodeURIComponent(slug)).then(function(r){return r.json();}).then(function(r){
+  fetch('/api/proxy?path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source)).then(function(r){return r.json();}).then(function(r){
     active=r.data&&r.data.item;
-    if(!active) return;
+    if(!active){
+      document.getElementById('iTitle').textContent='Không tìm thấy phim này ở nguồn '+(SRC_NAMES[source]||source)+'.';
+      return;
+    }
+    active.source=active.source||source;
 
     // ── Ảnh: banner dùng thumb_url (ngang), poster dùng poster_url (dọc) ──
     var banner = active.thumb_url || active.poster_url || '';
@@ -665,11 +736,12 @@ window.startPhim=function(){
 };
 
 function loadRec(){
+  var src=active.source||currentSource;
   var cat=(active&&active.category&&active.category[0]&&active.category[0].slug)||'hanh-dong';
-  fetch('/api/proxy?cat='+cat).then(function(r){return r.json();}).then(function(r){
+  fetch('/api/proxy?cat='+cat+'&source='+encodeURIComponent(src)).then(function(r){return r.json();}).then(function(r){
     var items=((r.data&&r.data.items)||[]).filter(function(m){return m.slug!==active.slug;}).slice(0,12);
     document.getElementById('tRec').innerHTML=items.map(function(m){
-      return '<div class="rc" onclick="swapMovie(\''+m.slug+'\')">'+
+      return '<div class="rc" onclick="swapMovie(\''+m.slug+'\',\''+(m.source||src)+'\')">'+
         '<img src="'+(m.poster_url||'')+'" loading="lazy" alt="'+esc(m.name)+'">'+
         '<div style="flex:1;min-width:0">'+
           '<div class="rc-n">'+esc(m.name)+'</div>'+
@@ -679,10 +751,10 @@ function loadRec(){
   }).catch(function(){});
 }
 
-window.swapMovie=function(slug){
+window.swapMovie=function(slug,source){
   document.getElementById('video').src='';
-  fetch('/api/proxy?path='+encodeURIComponent(slug)).then(function(r){return r.json();}).then(function(r){
-    active=r.data&&r.data.item;if(active)startPhim();
+  fetch('/api/proxy?path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source||currentSource)).then(function(r){return r.json();}).then(function(r){
+    active=r.data&&r.data.item;if(active){active.source=active.source||source||currentSource;startPhim();}
   });
 };
 
@@ -706,27 +778,28 @@ function stab(el,pid){
 /* ═══════════════════════════════════════
    NAV FILTER + SEARCH
 ═══════════════════════════════════════ */
-window.navFilter=function(el,params){
+window.navFilter=function(el,params,label){
   document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
   el.classList.add('on');
-  if(!params){location.reload();return;}
-  // Map params → tên tiêu đề
-  var labels={
-    'cat=hanh-dong':'&#9876;&#65039; Hành Động',
-    'cat=tinh-cam':'&#128150; Tình Cảm',
-    'cat=kinh-di':'&#128123; Kinh Dị',
-    'nation=han-quoc':'&#127917; Hàn Quốc',
-    'nation=trung-quoc':'&#128009; Trung Quốc',
-    'year=2024':'&#128197; Cực Phẩm 2024',
-  };
-  showFilterPage(labels[params]||'Kết quả lọc', params);
+  if(!params){loadHome();return;}
+  showFilterPage(label||'Kết quả lọc', params, false);
 };
 
 document.getElementById('search').addEventListener('keypress',function(e){
   if(e.key==='Enter' && e.target.value.trim()){
     document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
-    showFilterPage('&#128269; Kết quả: "'+esc(e.target.value)+'"','keyword='+encodeURIComponent(e.target.value));
+    // Tìm kiếm trên CẢ 3 NGUỒN cùng lúc — kết quả gắn badge nguồn tương ứng
+    showFilterPage('&#128269; Kết quả cho "'+esc(e.target.value)+'" (mọi nguồn)','keyword='+encodeURIComponent(e.target.value)+'&source=all', true);
   }
+});
+
+document.getElementById('srcSelect').addEventListener('change',function(e){
+  currentSource=e.target.value;
+  localStorage.setItem('kpc_source',currentSource);
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
+  var homeBtn=document.querySelector('.nb');
+  if(homeBtn) homeBtn.classList.add('on');
+  loadHome();
 });
 
 init();
