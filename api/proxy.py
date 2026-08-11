@@ -1,62 +1,413 @@
+"""
+================================================================================
+PROXY ĐA NGUỒN PHIM — KKPhim / NguonC / VSMOV
+================================================================================
+Mục tiêu: gọi tới 1 trong 3 nguồn API mã nguồn mở (hoặc cả 3 khi tìm kiếm),
+CHUẨN HÓA dữ liệu trả về theo đúng khuôn dạng mà frontend cũ đã dùng
+(kiểu Ophim/KKPhim: item.episodes[0].server_data[i].link_embed / link_m3u8),
+để toàn bộ JS phía frontend không cần biết đang xem nguồn nào.
+
+GHI CHÚ QUAN TRỌNG VỀ ĐỘ TIN CẬY DỮ LIỆU:
+- KKPhim (phimapi.com): xác nhận trực tiếp từ tài liệu chính thức
+  (kkphim.vip/help/help.html) — độ tin cậy CAO.
+- NguonC (phim.nguonc.com): xác nhận trực tiếp từ tài liệu chính thức
+  (ảnh chụp api-document do người dùng cung cấp) — TẤT CẢ URL endpoint +
+  cấu trúc phong bì phản hồi (status/paginate/items) đã khớp 100% —
+  độ tin cậy CAO. Chỉ riêng TÊN FIELD của từng phim (name/slug/thumb_url…)
+  và cấu trúc "episodes" bên trong endpoint chi tiết KHÔNG được liệt kê rõ
+  trong tài liệu (chỉ nói chung là "movie"/"tập phim"), nên hàm
+  normalize_nguonc() vẫn được viết PHÒNG THỦ (thử nhiều tên field khả dĩ)
+  để không vỡ trang nếu lệch tên field.
+- VSMOV (vsmov.com/api): xác nhận cấu trúc endpoint từ trang
+  vsmov.com/api-document — độ tin cậy CAO cho endpoint, TRUNG BÌNH cho
+  tên field chi tiết (trang doc không hiển thị JSON mẫu đầy đủ do là tab JS).
+  => Nếu chạy thử thấy nguồn nào thiếu ảnh/tên/tập phim, hãy gửi JSON mẫu
+     (F12 > Network) để mình chỉnh nhanh hàm normalize tương ứng. Hoặc đơn
+     giản hơn: mở thẳng ?debug=1 (ví dụ .../api/proxy?path=slug&source=
+     nguonc&debug=1) để xem field "_raw" — chính là JSON gốc chưa chỉnh sửa
+     mà nguồn trả về, khỏi cần mở DevTools.
+
+Deploy trên Vercel: file này export biến `app` (Flask, chuẩn WSGI) —
+Vercel's Python runtime tự nhận diện và chạy được, xem vercel.json đi kèm.
+================================================================================
+"""
 from flask import Flask, request, jsonify
-import requests
 from flask_cors import CORS
+import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
 CORS(app)
 
-CDN_URL = "https://img.ophim.live/uploads/movies"
-BASE_URL = "https://ophim1.com/v1/api"
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) KhoPhimChat/2.0"}
+TIMEOUT = 10
 
-def get_data(url):
+
+def get_json(url):
     try:
-        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-        return r.json() if r.status_code == 200 else None
-    except: return None
+        r = requests.get(url, headers=HEADERS, timeout=TIMEOUT)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    return None
 
-@app.route('/api/proxy')
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CẤU HÌNH 3 NGUỒN
+# ═══════════════════════════════════════════════════════════════════════════
+
+KKPHIM_BASE = "https://phimapi.com"
+NGUONC_BASE = "https://phim.nguonc.com/api"
+VSMOV_BASE = "https://vsmov.com/api"
+
+SOURCES = {
+    "kkphim": {"name": "KKPhim", "base": KKPHIM_BASE},
+    "nguonc": {"name": "Nguồn C", "base": NGUONC_BASE},
+    "vsmov":  {"name": "VSMOV",   "base": VSMOV_BASE},
+}
+
+# type_list dùng cho các nút "Phim Lẻ / Phim Bộ / Hoạt Hình / TV Shows" — tên
+# slug các nguồn không hoàn toàn giống nhau nên map riêng cho từng nguồn.
+TYPE_LIST_MAP = {
+    "kkphim": {"phim-le": "phim-le", "phim-bo": "phim-bo", "hoat-hinh": "hoat-hinh", "tv-shows": "tv-shows"},
+    "vsmov":  {"phim-le": "phim-le", "phim-bo": "phim-bo", "hoat-hinh": "hoat-hinh", "tv-shows": "tv-shows"},
+    "nguonc": {"phim-le": "phim-le", "phim-bo": "phim-bo", "hoat-hinh": "hoat-hinh", "tv-shows": "tv-shows"},
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# HÀM XÂY URL THEO TỪNG NGUỒN
+# ═══════════════════════════════════════════════════════════════════════════
+
+def url_home(source, page):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/danh-sach/phim-moi-cap-nhat?page={page}"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/danh-sach/phim-moi-cap-nhat?page={page}"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/films/phim-moi-cap-nhat?page={page}"  # tài liệu chính thức: KHÔNG có "danh-sach/"
+
+
+def url_type_list(source, type_list, page):
+    slug = TYPE_LIST_MAP.get(source, {}).get(type_list, type_list)
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/v1/api/danh-sach/{slug}?page={page}"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/danh-sach/{slug}?page={page}"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/films/danh-sach/{slug}?page={page}"
+
+
+def url_category(source, slug, page):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/v1/api/the-loai/{slug}?page={page}"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/the-loai/{slug}?page={page}"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/films/the-loai/{slug}?page={page}"
+
+
+def url_country(source, slug, page):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/v1/api/quoc-gia/{slug}?page={page}"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/quoc-gia/{slug}?page={page}"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/films/quoc-gia/{slug}?page={page}"
+
+
+def url_year(source, year, page):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/v1/api/nam/{year}?page={page}"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/nam/{year}?page={page}"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/films/nam-phat-hanh/{year}?page={page}"  # xác nhận từ tài liệu chính thức
+
+
+def url_search(source, keyword, page):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/v1/api/tim-kiem?keyword={keyword}&page={page}&limit=24"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/tim-kiem?keyword={keyword}&limit=24"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/films/search?keyword={keyword}"  # tài liệu chính thức: không có tham số page
+
+
+def url_detail(source, slug):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/phim/{slug}"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/phim/{slug}"
+    if source == "nguonc":
+        return f"{NGUONC_BASE}/film/{slug}"
+
+
+def url_cat_list(source):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/the-loai"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/the-loai"
+    return None  # NguonC: chưa xác nhận có endpoint danh sách thể loại riêng
+
+
+def url_country_list(source):
+    if source == "kkphim":
+        return f"{KKPHIM_BASE}/quoc-gia"
+    if source == "vsmov":
+        return f"{VSMOV_BASE}/quoc-gia"
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CHUẨN HÓA DỮ LIỆU
+# ═══════════════════════════════════════════════════════════════════════════
+
+def g(d, *keys, default=""):
+    """Lấy giá trị đầu tiên khác rỗng trong danh sách key khả dĩ (phòng thủ)."""
+    for k in keys:
+        v = d.get(k)
+        if v not in (None, ""):
+            return v
+    return default
+
+
+def norm_item_ophim_like(raw, source):
+    """KKPhim & VSMOV: schema đã gần giống Ophim gốc, gần như giữ nguyên."""
+    return {
+        "name": g(raw, "name"),
+        "origin_name": g(raw, "origin_name", "original_name"),
+        "slug": g(raw, "slug"),
+        "thumb_url": g(raw, "thumb_url"),
+        "poster_url": g(raw, "poster_url", default=g(raw, "thumb_url")),
+        "year": g(raw, "year"),
+        "quality": g(raw, "quality"),
+        "lang": g(raw, "lang", "language"),
+        "episode_current": g(raw, "episode_current", "current_episode"),
+        "time": g(raw, "time"),
+        "source": source,
+    }
+
+
+def norm_item_nguonc(raw):
+    return {
+        "name": g(raw, "name", "title"),
+        "origin_name": g(raw, "origin_name", "original_name"),
+        "slug": g(raw, "slug"),
+        "thumb_url": g(raw, "thumb_url"),
+        "poster_url": g(raw, "poster_url", default=g(raw, "thumb_url")),
+        "year": g(raw, "publish_year", "year"),
+        "quality": g(raw, "quality"),
+        "lang": g(raw, "language", "lang"),
+        "episode_current": g(raw, "current_episode", "total_episodes"),
+        "time": g(raw, "time"),
+        "source": "nguonc",
+    }
+
+
+def norm_list(raw, source):
+    """Trả về list item đã chuẩn hoá, thử nhiều đường dẫn field khác nhau."""
+    if not raw:
+        return []
+    items = None
+    # Các khuôn dạng thường gặp: data.items / items / data.movies / movies
+    if isinstance(raw.get("data"), dict) and isinstance(raw["data"].get("items"), list):
+        items = raw["data"]["items"]
+    elif isinstance(raw.get("items"), list):
+        items = raw["items"]
+    elif isinstance(raw.get("data"), dict) and isinstance(raw["data"].get("movies"), list):
+        items = raw["data"]["movies"]
+    if items is None:
+        return []
+    if source == "nguonc":
+        return [norm_item_nguonc(it) for it in items]
+    return [norm_item_ophim_like(it, source) for it in items]
+
+
+def norm_categories(raw, source):
+    """Danh sách [{name, slug}] cho menu Thể loại / Quốc gia."""
+    if not raw:
+        return []
+    arr = raw if isinstance(raw, list) else raw.get("data") or []
+    out = []
+    for it in arr:
+        if isinstance(it, dict) and it.get("slug"):
+            out.append({"name": g(it, "name"), "slug": g(it, "slug")})
+    return out
+
+
+def parse_episodes_ophim_like(raw_item):
+    eps = raw_item.get("episodes") or []
+    out = []
+    for sv in eps:
+        data = sv.get("server_data") or sv.get("items") or []
+        out.append({
+            "server_name": g(sv, "server_name", default="Server"),
+            "server_data": [{
+                "name": g(e, "name", default=g(e, "slug")),
+                "slug": g(e, "slug"),
+                "link_embed": g(e, "link_embed", "embed"),
+                "link_m3u8": g(e, "link_m3u8", "m3u8"),
+            } for e in data],
+        })
+    return out
+
+
+def norm_detail(raw, source, slug):
+    if not raw:
+        return None
+
+    if source in ("kkphim", "vsmov"):
+        item = (raw.get("data") or {}).get("item") or raw.get("item") or raw.get("movie")
+        if not item:
+            return None
+        item = dict(item)
+        item.setdefault("source", source)
+        item["episodes"] = parse_episodes_ophim_like(item)
+        # category/country đã có sẵn dạng [{name,slug}] theo chuẩn Ophim
+        item["category"] = item.get("category") or []
+        item["country"] = item.get("country") or []
+        item["actor"] = item.get("actor") or []
+        item["director"] = item.get("director") or []
+        return item
+
+    if source == "nguonc":
+        movie = raw.get("movie")
+        if not movie:
+            return None
+        category, country = [], []
+        cat_field = movie.get("category")
+        if isinstance(cat_field, dict):
+            for grp in cat_field.values():
+                if not isinstance(grp, dict):
+                    continue
+                gname = (grp.get("group_name") or "").lower()
+                lst = [{"name": g(x, "name"), "slug": g(x, "slug", "id")} for x in (grp.get("list") or [])]
+                if "loại" in gname or "loai" in gname:
+                    category = lst
+                elif "gia" in gname or "quốc" in gname:
+                    country = lst
+        casts = movie.get("casts") or movie.get("actor") or ""
+        actor = [a.strip() for a in casts.split(",")] if isinstance(casts, str) and casts else (casts if isinstance(casts, list) else [])
+        director_raw = movie.get("director") or ""
+        director = [d.strip() for d in director_raw.split(",")] if isinstance(director_raw, str) and director_raw else (director_raw if isinstance(director_raw, list) else [])
+
+        episodes = []
+        # Theo tài liệu, endpoint chi tiết chỉ trả field "movie" (không có field
+        # rời ở cấp cao nhất) → episodes nhiều khả năng nằm TRONG movie.
+        # Vẫn thử fallback ở cấp cao nhất phòng khi API có phiên bản khác.
+        raw_eps = movie.get("episodes") or raw.get("episodes") or []
+        for sv in raw_eps:
+            items = sv.get("items") or sv.get("server_data") or []
+            episodes.append({
+                "server_name": g(sv, "server_name", default="Server"),
+                "server_data": [{
+                    "name": g(e, "name", default=g(e, "slug")),
+                    "slug": g(e, "slug"),
+                    "link_embed": g(e, "embed", "link_embed"),
+                    "link_m3u8": g(e, "m3u8", "link_m3u8"),
+                } for e in items],
+            })
+
+        return {
+            "name": g(movie, "name"),
+            "origin_name": g(movie, "original_name", "origin_name"),
+            "slug": g(movie, "slug", default=slug),
+            "content": g(movie, "description", "content"),
+            "thumb_url": g(movie, "thumb_url"),
+            "poster_url": g(movie, "poster_url", default=g(movie, "thumb_url")),
+            "year": g(movie, "publish_year", "year"),
+            "quality": g(movie, "quality"),
+            "lang": g(movie, "language", "lang"),
+            "episode_current": g(movie, "current_episode"),
+            "time": g(movie, "time"),
+            "actor": actor,
+            "director": director,
+            "category": category,
+            "country": country,
+            "episodes": episodes,
+            "source": "nguonc",
+        }
+
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ROUTE CHÍNH
+# ═══════════════════════════════════════════════════════════════════════════
+
+@app.route("/api/proxy")
 def handle():
-    slug = request.args.get('path', '').strip()
-    kw = request.args.get('keyword', '').strip()
-    cat = request.args.get('cat', '').strip()     # Thể loại
-    nat = request.args.get('nation', '').strip()  # Quốc gia
-    year = request.args.get('year', '').strip()   # Năm
-    
-    # 1. Chi tiết phim (Giữ nguyên lõi cũ để không lỗi)
+    source = (request.args.get("source") or "kkphim").strip()
+    slug = request.args.get("path", "").strip()
+    kw = request.args.get("keyword", "").strip()
+    cat = request.args.get("cat", "").strip()
+    nation = request.args.get("nation", "").strip()
+    year = request.args.get("year", "").strip()
+    type_list = request.args.get("type", "").strip()
+    list_meta = request.args.get("list", "").strip()  # 'the-loai' | 'quoc-gia'
+    page = request.args.get("page", "1").strip()
+    debug = request.args.get("debug") == "1"
+
+    # ── Danh sách thể loại / quốc gia (để dựng menu động) ──
+    if list_meta:
+        if list_meta == "the-loai":
+            raw = get_json(url_cat_list(source)) if url_cat_list(source) else None
+        elif list_meta == "quoc-gia":
+            raw = get_json(url_country_list(source)) if url_country_list(source) else None
+        else:
+            raw = None
+        return jsonify({"status": True, "source": source, "data": {"items": norm_categories(raw, source)}})
+
+    # ── Chi tiết phim ──
     if slug:
-        data = get_data(f"{BASE_URL}/phim/{slug}")
-        if data and 'data' in data:
-            item = data['data']['item']
-            if item.get('poster_url') and not item['poster_url'].startswith('http'):
-                item['poster_url'] = f"{CDN_URL}/{item['poster_url']}"
-            if item.get('thumb_url') and not item['thumb_url'].startswith('http'):
-                item['thumb_url'] = f"{CDN_URL}/{item['thumb_url']}"
-        return jsonify(data or {"status": False})
+        raw = get_json(url_detail(source, slug))
+        item = norm_detail(raw, source, slug)
+        if not item:
+            resp = {"status": False, "source": source}
+            if debug:
+                resp["_raw"] = raw
+            return jsonify(resp)
+        resp = {"status": True, "source": source, "data": {"item": item}}
+        if debug:
+            resp["_raw"] = raw
+        return jsonify(resp)
 
-    # 2. Xử lý danh sách phim theo phân loại chuẩn Document
-    # Mặc định là phim mới cập nhật
-    url = f"{BASE_URL}/danh-sach/phim-moi-cap-nhat?page=1"
-    
-    if kw: # Tìm kiếm
-        url = f"{BASE_URL}/tim-kiem?keyword={kw}"
-    elif cat: # Theo thể loại: /the-loai/{slug}
-        url = f"{BASE_URL}/the-loai/{cat}?page=1"
-    elif nat: # Theo quốc gia: /quoc-gia/{slug}
-        url = f"{BASE_URL}/quoc-gia/{nat}?page=1"
-    elif year: # Theo năm: /danh-sach/phim-moi?year={year}
-        url = f"{BASE_URL}/danh-sach/phim-moi?year={year}&page=1"
+    # ── Tìm kiếm: source=all -> tìm song song cả 3 nguồn ──
+    if kw:
+        if source == "all":
+            items = []
+            with ThreadPoolExecutor(max_workers=3) as ex:
+                futs = {ex.submit(get_json, url_search(s, kw, page)): s for s in SOURCES}
+                for fut in as_completed(futs):
+                    s = futs[fut]
+                    try:
+                        raw = fut.result()
+                        items.extend(norm_list(raw, s))
+                    except Exception:
+                        continue
+            return jsonify({"status": True, "source": "all", "data": {"items": items}})
+        raw = get_json(url_search(source, kw, page))
+        return jsonify({"status": True, "source": source, "data": {"items": norm_list(raw, source)}})
 
-    data = get_data(url)
-    
-    # Chuẩn hóa URL ảnh cho tất cả danh sách để hiện poster
-    if data and 'data' in data and 'items' in data['data']:
-        for i in data['data']['items']:
-            for key in ['poster_url', 'thumb_url']:
-                val = i.get(key)
-                if val and not val.startswith('http'):
-                    i[key] = f"{CDN_URL}/{val}"
-                    
-    return jsonify(data or {"status": False})
+    # ── Danh sách theo bộ lọc ──
+    if cat:
+        raw = get_json(url_category(source, cat, page))
+    elif nation:
+        raw = get_json(url_country(source, nation, page))
+    elif year:
+        raw = get_json(url_year(source, year, page))
+    elif type_list:
+        raw = get_json(url_type_list(source, type_list, page))
+    else:
+        raw = get_json(url_home(source, page))
 
-if __name__ == '__main__':
+    resp = {"status": True, "source": source, "data": {"items": norm_list(raw, source)}}
+    if debug:
+        resp["_raw"] = raw
+    return jsonify(resp)
+
+
+if __name__ == "__main__":
     app.run(port=5000, debug=True)
