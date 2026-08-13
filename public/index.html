@@ -2,969 +2,355 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KhoPhimChat - Phim phải chất nhất</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KhoPhimChat — Kho phim miễn phí, đa nguồn</title>
+<meta name="description" content="Xem phim online miễn phí, tổng hợp từ nhiều nguồn, cập nhật liên tục.">
+<link rel="stylesheet" href="assets/style.css">
 <style>
-:root{
-  --gold:#FFD700;--gold-dim:rgba(255,215,0,.13);--gold-bd:rgba(255,215,0,.32);
-  --bg:#080810;--bg2:#0d0d1a;
-  --gl:rgba(255,255,255,.055);--gl-bd:rgba(255,255,255,.11);--gl-hv:rgba(255,255,255,.1);
-  --cw:170px;--r:10px;
+/* CSS riêng cho trang chủ: dropdown menu thể loại/quốc gia trên nav desktop */
+.nav-drop{position:relative;}
+.nav-drop>.nav-link{display:flex;align-items:center;gap:4px;}
+.nav-drop svg{width:13px;height:13px;transition:.2s;}
+.nav-drop:hover svg,.nav-drop.open svg{transform:rotate(180deg);}
+.drop-panel{
+  position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%);
+  width:min(420px,80vw);max-height:340px;overflow-y:auto;
+  background:var(--bg-2);border:1px solid var(--border-2);border-radius:var(--r-md);
+  box-shadow:var(--shadow-2);padding:12px;display:none;z-index:220;
 }
-@media(max-width:600px){:root{--cw:128px}}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:#fff;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+.nav-drop:hover .drop-panel,.drop-panel.open{display:block;}
+.drop-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.drop-chip{
+  padding:7px 13px;border-radius:var(--r-pill);font-size:12.5px;font-weight:600;
+  background:var(--bg-3);color:var(--ink-dim);white-space:nowrap;transition:.15s;
+}
+.drop-chip:hover{background:var(--gold-dim);color:var(--gold);}
 
-/* NAV */
-.nav{
-  padding:0 4%;height:62px;display:flex;justify-content:space-between;align-items:center;
-  background:rgba(8,8,16,.78);position:sticky;top:0;z-index:1000;
-  backdrop-filter:blur(22px) saturate(1.8);-webkit-backdrop-filter:blur(22px) saturate(1.8);
-  border-bottom:1px solid var(--gl-bd);
+.mm-section-label{
+  font-family:var(--font-mono);font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-faint);margin:20px 0 10px;padding:0 16px;
 }
-.logo{color:var(--gold);font-size:21px;font-weight:900;text-decoration:none;letter-spacing:-.5px}
-.logo span{color:#fff;font-weight:300}
-.nav-center{display:flex;gap:3px;align-items:center}
-.nb{
-  background:transparent;border:1px solid transparent;color:rgba(255,255,255,.55);
-  font-size:13px;padding:5px 13px;border-radius:20px;cursor:pointer;transition:.2s;white-space:nowrap;
-}
-.nb:hover,.nb.on{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-bd)}
-.search-box{
-  background:var(--gl);border:1px solid var(--gl-bd);color:#fff;
-  padding:7px 15px;border-radius:22px;outline:none;width:190px;font-size:13px;transition:.3s;
-}
-.search-box:focus{width:250px;border-color:var(--gold-bd);background:rgba(255,215,0,.07)}
-.search-box::placeholder{color:rgba(255,255,255,.32)}
-.nav-right{display:flex;align-items:center;gap:9px}
-.src-select{
-  background:var(--gl);border:1px solid var(--gl-bd);color:var(--gold);
-  padding:7px 11px;border-radius:22px;outline:none;font-size:13px;font-weight:700;
-  cursor:pointer;appearance:none;-webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FFD700'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 8px center;background-size:16px;
-  padding-right:28px;transition:.2s;
-}
-.src-select:hover,.src-select:focus{border-color:var(--gold-bd);background-color:rgba(255,215,0,.07)}
-.src-select option{background:#12121e;color:#fff}
-@media(max-width:720px){
-  .nav-center{display:none}
-  .search-box{width:120px}.search-box:focus{width:150px}
-  .src-select{padding:7px 24px 7px 9px;font-size:12px}
-}
-.src-tag{
-  position:absolute;top:6px;left:6px;z-index:2;
-  font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;
-  background:rgba(8,8,16,.78);border:1px solid var(--gold-bd);color:var(--gold);
-  letter-spacing:.3px;backdrop-filter:blur(4px);
-}
-
-/* ── HERO ── */
-.hero-wrap{position:relative;height:88vh;min-height:480px;overflow:hidden;background:#000;user-select:none}
-.hero-track{
-  display:flex;height:100%;
-  transition:transform .55s cubic-bezier(.77,0,.175,1);
-  will-change:transform;
-}
-.hero-slide{
-  flex:0 0 100%;width:100%;height:100%;
-  position:relative;overflow:hidden;
-}
-.hero-slide img.hbg{
-  position:absolute;inset:0;width:100%;height:100%;
-  object-fit:cover;object-position:center top;
-  opacity:.44;transform:scale(1.06);
-  transition:transform 7s ease,opacity .55s;
-  will-change:transform;display:block;pointer-events:none;
-}
-.hero-slide.cur img.hbg{transform:scale(1);opacity:.56}
-.hero-ov{
-  position:absolute;inset:0;pointer-events:none;
-  background:
-    linear-gradient(to right,rgba(8,8,16,.97) 0%,rgba(8,8,16,.6) 44%,rgba(8,8,16,.04) 100%),
-    linear-gradient(to top,rgba(8,8,16,1) 0%,transparent 42%);
-}
-.hero-info{
-  position:absolute;bottom:11%;left:5%;right:5%;max-width:560px;
-  opacity:0;transform:translateY(20px);
-  transition:opacity .48s .1s,transform .48s .1s;
-}
-.hero-slide.cur .hero-info{opacity:1;transform:none}
-.badges{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
-.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:var(--gold-dim);border:1px solid var(--gold-bd);color:var(--gold);letter-spacing:.4px;text-transform:uppercase}
-.badge.pl{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14);color:rgba(255,255,255,.68)}
-.hero-title{font-size:clamp(26px,4.2vw,54px);font-weight:900;line-height:1.08;color:#fff;margin-bottom:7px}
-.hero-sub{font-size:clamp(13px,1.8vw,18px);color:rgba(255,215,0,.75);margin-bottom:13px;font-weight:400}
-.hero-desc{color:rgba(255,255,255,.57);line-height:1.68;font-size:14px;margin-bottom:26px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.hero-btns{display:flex;gap:11px;flex-wrap:wrap}
-.btn-p{background:var(--gold);color:#000;border:none;padding:12px 30px;border-radius:11px;font-weight:800;font-size:14px;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:7px}
-.btn-p:hover{background:#ffe94d;transform:translateY(-1px)}
-.btn-g{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18);padding:12px 26px;border-radius:11px;font-weight:600;font-size:14px;cursor:pointer;transition:.18s}
-.btn-g:hover{background:rgba(255,255,255,.14)}
-.hero-dots{position:absolute;bottom:4%;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:10;pointer-events:auto}
-.dot{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.28);cursor:pointer;transition:.3s}
-.dot.on{width:24px;background:var(--gold)}
-.hero-arr{
-  position:absolute;top:50%;transform:translateY(-50%);
-  background:rgba(0,0,0,.42);border:1px solid var(--gl-bd);
-  color:#fff;width:42px;height:42px;border-radius:50%;
-  cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;
-  transition:.2s;z-index:10;backdrop-filter:blur(6px);line-height:1;
-}
-.hero-arr:hover{background:rgba(255,215,0,.18);border-color:var(--gold-bd)}
-.hero-arr.prev{left:2%}.hero-arr.next{right:2%}
-@media(max-width:600px){.hero-arr{display:none}}
-
-/* ── ROWS (trang chủ – scroll ngang) ── */
-.rows-wrap{padding:8px 0 60px}
-.row{padding:28px 0 0 5%}
-.row-hd{display:flex;align-items:center;justify-content:space-between;padding-right:5%;margin-bottom:16px}
-.row-title{font-size:17px;font-weight:800;color:#fff;display:flex;align-items:center;gap:9px}
-.row-title::before{content:'';display:block;width:4px;height:19px;background:var(--gold);border-radius:2px}
-.row-more{font-size:13px;color:rgba(255,215,0,.65);cursor:pointer}
-.list-wrap{display:flex;overflow-x:auto;gap:13px;padding-bottom:14px;scrollbar-width:none;padding-right:5%}
-.list-wrap::-webkit-scrollbar{display:none}
-
-/* ── TRANG LỌC / TÌM KIẾM – grid nhiều cột ── */
-.filter-page{padding:30px 4% 60px}
-.filter-page .row-hd{margin-bottom:20px;padding-right:0}
-/* Grid tự động: nhiều cột, nhiều hàng, phủ kín */
-.grid-wrap{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(var(--cw),1fr));
-  gap:16px;
-}
-
-/* ── CARD ── */
-.card{
-  cursor:pointer;border-radius:var(--r);overflow:hidden;
-  background:var(--gl);border:1px solid var(--gl-bd);transition:.24s;position:relative;
-  /* chiều rộng tự do theo container */
-}
-/* Trong scroll-ngang thì cần min-width */
-.list-wrap .card{flex:0 0 var(--cw)}
-.card:hover{transform:translateY(-6px) scale(1.025);border-color:rgba(255,215,0,.38);box-shadow:0 14px 36px rgba(0,0,0,.55)}
-.card:focus{outline:none;box-shadow:0 0 0 2px var(--gold)}
-.ciw{position:relative;aspect-ratio:2/3;overflow:hidden}
-.card img{width:100%;height:100%;object-fit:cover;transition:transform .38s;display:block}
-.card:hover img{transform:scale(1.07)}
-.card-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.78) 0%,transparent 50%);opacity:0;transition:.28s;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px}
-.card:hover .card-ov{opacity:1}
-.play-ic{width:34px;height:34px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center}
-.ep-badge{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.14);font-size:10px;color:#fff;padding:2px 6px;border-radius:5px;font-weight:600}
-.card-t{font-size:12px;padding:9px 9px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.82)}
-
-/* ── SKELETON ── */
-.sk{animation:sh 1.4s infinite;background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.09) 50%,rgba(255,255,255,.04) 75%);background-size:200% 100%}
-@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.sk-card{border-radius:var(--r);overflow:hidden;background:var(--gl);border:1px solid var(--gl-bd)}
-.list-wrap .sk-card{flex:0 0 var(--cw)}
-.sk-img{aspect-ratio:2/3;width:100%}
-.sk-txt{height:12px;margin:10px 9px 9px;border-radius:4px}
-
-/* ── MODAL INTRO ── */
-#intro{
-  position:fixed;inset:0;z-index:9000;display:none;
-  align-items:center;justify-content:center;padding:16px;
-  background:rgba(0,0,0,.7);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-}
-.ib{
-  background:rgba(12,12,22,.97);border:1px solid rgba(255,255,255,.11);
-  border-radius:22px;max-width:660px;width:100%;
-  display:flex;flex-direction:column;max-height:92vh;
-  box-shadow:0 36px 72px rgba(0,0,0,.8);overflow:hidden;
-}
-/* Banner phía trên – dùng thumb_url */
-.ib-hero{position:relative;height:240px;overflow:hidden;flex-shrink:0;background:#111}
-.ib-banner{
-  width:100%;height:100%;object-fit:cover;object-position:center top;
-  opacity:.52;display:block;
-  /* Fallback: nếu ảnh lỗi thì ẩn */
-}
-.ib-banner.err{display:none}
-.ib-hero-grd{position:absolute;inset:0;background:linear-gradient(to top,rgba(12,12,22,1) 0%,transparent 55%)}
-/* Poster nhỏ – góc dưới trái banner */
-.ib-poster-wrap{
-  position:absolute;bottom:-32px;left:22px;
-  width:88px;
-  border-radius:11px;overflow:hidden;
-  box-shadow:0 6px 22px rgba(0,0,0,.85);
-  border:2px solid rgba(255,255,255,.16);
-  background:#1a1a2a;   /* nền dự phòng nếu ảnh chậm */
-  aspect-ratio:2/3;
-}
-.ib-poster-wrap img{width:100%;height:100%;object-fit:cover;display:block}
-.ib-body{padding:40px 22px 22px;overflow-y:auto}
-.ib-body::-webkit-scrollbar{width:3px}
-.ib-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
-.ib-title{font-size:24px;font-weight:900;color:#fff;padding-left:108px;margin-bottom:3px}
-.ib-orig{font-size:13px;color:rgba(255,215,0,.7);padding-left:108px;margin-bottom:18px}
-.ib-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:17px}
-.ib-field{background:var(--gl);border:1px solid var(--gl-bd);border-radius:9px;padding:9px 13px}
-.ib-lbl{font-size:11px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
-.ib-val{font-size:13px;color:#fff;font-weight:600}
-.ib-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.ctag{font-size:12px;padding:3px 11px;border-radius:18px;background:var(--gl);border:1px solid var(--gl-bd);color:rgba(255,255,255,.68)}
-.ib-desc{font-size:13px;color:rgba(255,255,255,.55);line-height:1.68;margin-bottom:18px}
-.ib-acts{display:flex;gap:9px}
-.ib-acts .btn-p{flex:1;justify-content:center;padding:13px}
-.btn-x{background:var(--gl);border:1px solid var(--gl-bd);color:rgba(255,255,255,.55);padding:13px 18px;border-radius:11px;cursor:pointer;font-size:19px;line-height:1;transition:.18s}
-.btn-x:hover{color:#fff;background:var(--gl-hv)}
-
-/* ── PLAYER ── */
-#player{position:fixed;inset:0;z-index:9500;display:none;flex-direction:column;background:var(--bg)}
-.ph{padding:10px 18px;display:flex;justify-content:space-between;align-items:center;background:var(--bg2);border-bottom:1px solid var(--gl-bd);flex-shrink:0}
-.ph-l{display:flex;align-items:center;gap:11px}
-.pbk{background:var(--gl);border:1px solid var(--gl-bd);color:#fff;width:35px;height:35px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:.18s}
-.pbk:hover{background:var(--gl-hv)}
-#pTitle{color:var(--gold);font-size:15px;font-weight:700}
-.pex{background:rgba(210,40,40,.12);border:1px solid rgba(210,40,40,.28);color:#ff5858;padding:7px 16px;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px;transition:.18s}
-.pex:hover{background:rgba(210,40,40,.22)}
-.pb{flex:1;display:flex;overflow:hidden}
-.pm{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.ifw{flex:1;position:relative;min-height:0}
-#video{width:100%;height:100%;border:none;display:block}
-.psd{width:310px;background:var(--bg2);border-left:1px solid var(--gl-bd);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
-@media(max-width:900px){.psd{display:none}}
-.stabs{display:flex;border-bottom:1px solid var(--gl-bd)}
-.stab{flex:1;padding:11px 6px;text-align:center;font-size:13px;color:rgba(255,255,255,.45);cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
-.stab.on{color:var(--gold);border-bottom-color:var(--gold)}
-.sbc{flex:1;overflow-y:auto;padding:13px}
-.sbc::-webkit-scrollbar{width:3px}
-.sbc::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09)}
-.sp{display:none}.sp.on{display:block}
-.eps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:7px}
-.epb{background:var(--gl);border:1px solid var(--gl-bd);color:rgba(255,255,255,.72);padding:9px 4px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;text-align:center;transition:.18s}
-.epb:hover{background:var(--gl-hv)}
-.epb.on{background:var(--gold-dim);border-color:var(--gold-bd);color:var(--gold)}
-.epb:focus{outline:none;box-shadow:0 0 0 2px var(--gold)}
-.eps-mob{background:var(--bg2);border-top:1px solid var(--gl-bd);padding:11px;display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
-.eps-mob::-webkit-scrollbar{display:none}
-@media(min-width:901px){.eps-mob{display:none}}
-.si-poster{width:76px;border-radius:8px;float:left;margin:0 13px 8px 0}
-.si-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px}
-.si-row{font-size:12px;color:rgba(255,255,255,.45);margin-bottom:4px}
-.si-row b{color:rgba(255,255,255,.82)}
-.si-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;margin-top:9px;clear:both}
-.rc{display:flex;gap:9px;padding:9px;border-radius:9px;cursor:pointer;transition:background .18s;margin-bottom:7px}
-.rc:hover{background:var(--gl-hv)}
-.rc img{width:52px;aspect-ratio:2/3;object-fit:cover;border-radius:6px;flex-shrink:0;display:block}
-.rc-n{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rc-m{font-size:11px;color:rgba(255,255,255,.38);margin-top:3px}
+.mm-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;}
+.mm-chips a{padding:8px 14px;border-radius:var(--r-pill);background:var(--bg-2);font-size:13px;font-weight:600;color:var(--ink-dim);}
 </style>
 </head>
-<body>
+<body data-page="home">
 
-<nav class="nav">
-  <a href="#" class="logo" onclick="location.reload()">KhoPhim<span>Chat</span></a>
-  <div class="nav-center" id="navCenter">
-    <button class="nb on" onclick="navFilter(this,'','Trang Chủ')">Trang Chủ</button>
+<nav class="site-nav">
+  <a href="index.html" class="logo">
+    <span class="mark"><svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5-9-5.5z" fill="currentColor"/></svg></span>
+    <b>Kho</b><span>PhimChat</span>
+  </a>
+
+  <div class="nav-links" id="navLinks">
+    <a class="nav-link on" href="index.html">Trang chủ</a>
+    <a class="nav-link" href="#" data-params="type=phim-le" data-label="Phim Lẻ">Phim Lẻ</a>
+    <a class="nav-link" href="#" data-params="type=phim-bo" data-label="Phim Bộ">Phim Bộ</a>
+    <a class="nav-link" href="#" data-params="type=hoat-hinh" data-label="Hoạt Hình">Hoạt Hình</a>
+    <a class="nav-link" href="#" data-params="type=tv-shows" data-label="TV Shows">TV Shows</a>
+    <div class="nav-drop" id="dropCat">
+      <a class="nav-link" href="#">Thể loại <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></a>
+      <div class="drop-panel"><div class="drop-grid" id="catPanel"></div></div>
+    </div>
+    <div class="nav-drop" id="dropNat">
+      <a class="nav-link" href="#">Quốc gia <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></a>
+      <div class="drop-panel"><div class="drop-grid" id="natPanel"></div></div>
+    </div>
   </div>
+
   <div class="nav-right">
-    <select id="srcSelect" class="src-select" title="Đổi nguồn phim">
-      <option value="kkphim">KAKA</option>
-      <option value="nguonc">NGUONCE</option>
-      <option value="vsmov">VSMUP</option>
-    </select>
-    <input type="text" id="search" class="search-box" placeholder="🔍 Tìm kiếm mọi nguồn...">
+    <div class="search-wrap">
+      <button class="search-toggle" id="searchToggle" aria-label="Tìm kiếm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </button>
+      <input type="text" id="searchBox" class="search-box" placeholder="Tìm phim ở mọi nguồn...">
+    </div>
+    <button class="src-pill" id="srcPill">
+      <span class="dot"></span><span id="srcPillLabel">KKPhim</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      <div class="src-menu" id="srcMenu">
+        <button class="src-opt on" data-src="kkphim">KKPhim</button>
+        <button class="src-opt" data-src="nguonc">Nguồn C</button>
+        <button class="src-opt" data-src="vsmov">VSMOV</button>
+      </div>
+    </button>
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
   </div>
 </nav>
 
-<div class="hero-wrap" id="heroWrap">
+<div class="mobile-menu" id="mobileMenu">
+  <a class="nav-link on" href="index.html">Trang chủ</a>
+  <a class="nav-link" href="#" data-params="type=phim-le" data-label="Phim Lẻ">Phim Lẻ</a>
+  <a class="nav-link" href="#" data-params="type=phim-bo" data-label="Phim Bộ">Phim Bộ</a>
+  <a class="nav-link" href="#" data-params="type=hoat-hinh" data-label="Hoạt Hình">Hoạt Hình</a>
+  <a class="nav-link" href="#" data-params="type=tv-shows" data-label="TV Shows">TV Shows</a>
+  <div class="mm-section-label">Thể loại</div>
+  <div class="mm-chips" id="mmCat"></div>
+  <div class="mm-section-label">Quốc gia</div>
+  <div class="mm-chips" id="mmNat"></div>
+</div>
+
+<div id="heroWrap"><div class="hero" id="hero">
   <div class="hero-track" id="heroTrack"></div>
-  <button class="hero-arr prev" onclick="moveHero(-1)">&#8249;</button>
-  <button class="hero-arr next" onclick="moveHero(1)">&#8250;</button>
+  <div class="hero-fade"></div>
+  <div class="hero-content" id="heroContent"></div>
   <div class="hero-dots" id="heroDots"></div>
-</div>
+</div></div>
 
-<div id="content" class="rows-wrap"></div>
+<main id="content"></main>
 
-<!-- MODAL INTRO -->
-<div id="intro">
-  <div class="ib">
-    <div class="ib-hero">
-      <!-- Banner: dùng thumb_url (ảnh ngang rộng) -->
-      <img id="iBanner" class="ib-banner" src="" alt="" onerror="this.classList.add('err')">
-      <div class="ib-hero-grd"></div>
-      <!-- Poster nhỏ nổi lên từ banner -->
-      <div class="ib-poster-wrap">
-        <img id="iPoster" src="" alt="" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 2 3%22><rect fill=%22%231a1a2a%22 width=%222%22 height=%223%22/></svg>'">
-      </div>
-    </div>
-    <div class="ib-body">
-      <h2 class="ib-title" id="iTitle"></h2>
-      <p class="ib-orig" id="iOrig"></p>
-      <div class="ib-grid" id="iMeta"></div>
-      <div class="ib-cats" id="iCats"></div>
-      <p class="ib-desc" id="iDesc"></p>
-      <div class="ib-acts">
-        <button class="btn-p" id="btnStart" onclick="startPhim()">&#9654; XEM PHIM NGAY</button>
-        <button class="btn-x" onclick="closeIntro()">&#10005;</button>
-      </div>
-    </div>
+<footer class="site-footer">
+  <div class="footer-row">
+    <a href="index.html" class="logo" style="font-size:16px">
+      <span class="mark" style="width:22px;height:22px"><svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5-9-5.5z" fill="currentColor"/></svg></span>
+      <b>Kho</b><span>PhimChat</span>
+    </a>
+    <p class="footer-note">
+      KhoPhimChat tổng hợp liên kết phim từ nhiều nguồn công khai trên internet, không lưu trữ file phim trên máy chủ.
+      Có thắc mắc hoặc cần hỗ trợ, vui lòng liên hệ <b>admin@khophimchat.com</b>.
+    </p>
   </div>
-</div>
+</footer>
 
-<!-- PLAYER -->
-<div id="player">
-  <div class="ph">
-    <div class="ph-l">
-      <button class="pbk" onclick="closePlayer()">&#8592;</button>
-      <span id="pTitle"></span>
-    </div>
-    <button class="pex" onclick="closePlayer()">&#10005; Thoát</button>
-  </div>
-  <div class="pb">
-    <div class="pm">
-      <div class="ifw"><iframe id="video" allowfullscreen></iframe></div>
-      <div class="eps-mob" id="epsMob"></div>
-    </div>
-    <div class="psd">
-      <div class="stabs">
-        <div class="stab on" onclick="stab(this,'tEps')">Tập phim</div>
-        <div class="stab" onclick="stab(this,'tInfo')">Thông tin</div>
-        <div class="stab" onclick="stab(this,'tRec')">Đề xuất</div>
-      </div>
-      <div class="sbc">
-        <div id="tEps" class="sp on"></div>
-        <div id="tInfo" class="sp"></div>
-        <div id="tRec" class="sp"></div>
-      </div>
-    </div>
-  </div>
-</div>
+<nav class="tab-bar">
+  <button class="tab-item on" onclick="location.href='index.html'">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg>
+    Trang chủ
+  </button>
+  <button class="tab-item" id="tabCat">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    Thể loại
+  </button>
+  <button class="tab-item" id="tabSearch">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    Tìm kiếm
+  </button>
+  <button class="tab-item" id="tabSrc">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>
+    Nguồn
+  </button>
+</nav>
 
+<script src="assets/app.js"></script>
 <script>
-var active=null, hIdx=0, hLen=0, hTimer=null, hSlides=[], hDots=[];
-var isDragging=false, dragStartX=0, dragDelta=0;
-var currentSource=localStorage.getItem('kpc_source')||'kkphim';
-var navDefs=[]; // danh sách [label,params] dựng động từ thể loại/quốc gia
+var hIdx=0,hTimer=null,hLen=0;
+var navDefs=[];
 
 /* ═══════════════════════════════════════
-   HERO SLIDER – transform-based + drag
+   DỰNG MENU ĐỘNG (thể loại/quốc gia luôn lấy theo KKPhim vì có endpoint
+   danh sách ổn định — dùng chung slug để lọc trên nguồn đang chọn)
+═══════════════════════════════════════ */
+function buildDynamicNav(){
+  return Promise.all([
+    fetch('/api/proxy?list=the-loai&source=kkphim').then(function(r){return r.json();}).catch(function(){return null;}),
+    fetch('/api/proxy?list=quoc-gia&source=kkphim').then(function(r){return r.json();}).catch(function(){return null;})
+  ]).then(function(res){
+    var cats=(res[0]&&res[0].data&&res[0].data.items)||[];
+    var nats=(res[1]&&res[1].data&&res[1].data.items)||[];
+    navDefs=[
+      ['Phim Lẻ','type=phim-le'],['Phim Bộ','type=phim-bo'],
+      ['Hoạt Hình','type=hoat-hinh'],['TV Shows','type=tv-shows'],
+    ];
+    var catHtml='',mmCatHtml='';
+    cats.slice(0,18).forEach(function(c){
+      var p='cat='+c.slug;
+      navDefs.push([c.name,p]);
+      catHtml+='<a class="drop-chip" href="#" data-params="'+p+'" data-label="'+esc(c.name)+'">'+esc(c.name)+'</a>';
+      mmCatHtml+='<a href="#" data-params="'+p+'" data-label="'+esc(c.name)+'">'+esc(c.name)+'</a>';
+    });
+    qs('#catPanel').innerHTML=catHtml;
+    qs('#mmCat').innerHTML=mmCatHtml;
+
+    var natHtml='',mmNatHtml='';
+    nats.slice(0,14).forEach(function(c){
+      var p='nation='+c.slug;
+      navDefs.push([c.name,p]);
+      natHtml+='<a class="drop-chip" href="#" data-params="'+p+'" data-label="'+esc(c.name)+'">'+esc(c.name)+'</a>';
+      mmNatHtml+='<a href="#" data-params="'+p+'" data-label="'+esc(c.name)+'">'+esc(c.name)+'</a>';
+    });
+    qs('#natPanel').innerHTML=natHtml;
+    qs('#mmNat').innerHTML=mmNatHtml;
+
+    qsa('[data-params]').forEach(function(a){
+      a.addEventListener('click',function(e){
+        e.preventDefault();
+        qs('#mobileMenu').classList.remove('open');
+        qsa('.drop-panel').forEach(function(p){p.classList.remove('open');});
+        setActiveNav(a);
+        showFilterPage(a.dataset.label,a.dataset.params,false);
+      });
+    });
+  });
+}
+
+function setActiveNav(activeEl){
+  qsa('.nav-link').forEach(function(l){l.classList.remove('on');});
+  if(activeEl && activeEl.classList.contains('nav-link')) activeEl.classList.add('on');
+}
+
+/* ═══════════════════════════════════════
+   HERO
 ═══════════════════════════════════════ */
 function buildHero(list){
   hLen=list.length;
-  var track=document.getElementById('heroTrack');
-  var dotsEl=document.getElementById('heroDots');
-
+  var track=qs('#heroTrack'), content=qs('#heroContent'), dots=qs('#heroDots');
   track.innerHTML=list.map(function(m,i){
     cacheItem(m);
     var thumb=m.thumb_url||m.poster_url||'';
-    var slug=m.slug;
-    return '<div class="hero-slide'+(i===0?' cur':'')+'">' +
-      '<img class="hbg" src="'+thumb+'" data-src="'+esc(thumb)+'" data-source="'+(m.source||currentSource)+'" alt="" '+(i===0?'fetchpriority="high"':'loading="lazy"')+
-        ' onerror="imgFallback(this)">' +
-      '<div class="hero-ov"></div>' +
-      '<div class="hero-info">' +
-        '<div class="badges">' +
-          (m.episode_current?'<span class="badge">'+m.episode_current+'</span>':'')+
-          (m.year?'<span class="badge pl">'+m.year+'</span>':'')+
-          (m.country&&m.country[0]?'<span class="badge pl">'+m.country[0].name+'</span>':'')+
-        '</div>'+
-        '<h1 class="hero-title">'+m.name+'</h1>'+
-        (m.origin_name?'<p class="hero-sub">'+m.origin_name+'</p>':'')+
-        '<p class="hero-desc">'+((m.content||'').replace(/<[^>]*>/g,''))+'</p>'+
-        '<div class="hero-btns">' +
-          '<button class="btn-p" onclick="showIntro(\''+slug+'\',\''+currentSource+'\')">&#9654; Xem ngay</button>'+
-          '<button class="btn-g" onclick="showIntro(\''+slug+'\',\''+currentSource+'\')">&#9432; Thông tin</button>'+
-        '</div>'+
-      '</div>'+
+    return '<div class="hero-slide'+(i===0?' cur':'')+'">'+
+      '<img src="'+thumb+'" data-src="'+esc(thumb)+'" data-source="'+(m.source||currentSource)+'" alt="" onerror="imgFallback(this)">'+
     '</div>';
   }).join('');
 
-  dotsEl.innerHTML=list.map(function(_,i){
-    return '<div class="dot'+(i===0?' on':'')+'" onclick="goHero('+i+')"></div>';
-  }).join('');
-
-  hSlides=[].slice.call(track.querySelectorAll('.hero-slide'));
-  hDots=[].slice.call(dotsEl.querySelectorAll('.dot'));
-
-  // Preload slide kế
-  if(list[1]){var p=new Image();p.src=list[1].thumb_url||list[1].poster_url||'';}
-
-  initHeroDrag();
-  startHeroAuto();
-}
-
-function applyHeroTransform(extra){
-  document.getElementById('heroTrack').style.transform=
-    'translateX(calc(-'+hIdx+'*100% + '+(extra||0)+'px))';
-}
-
-function goHero(idx,noRestart){
-  idx=((idx%hLen)+hLen)%hLen;
-  hSlides[hIdx].classList.remove('cur');
-  hDots[hIdx].classList.remove('on');
-  hIdx=idx;
-  document.getElementById('heroTrack').style.transition='transform .55s cubic-bezier(.77,0,.175,1)';
-  applyHeroTransform(0);
-  hSlides[hIdx].classList.add('cur');
-  hDots[hIdx].classList.add('on');
-  if(!noRestart) startHeroAuto();
-}
-
-function moveHero(dir){goHero(hIdx+dir);}
-
-function startHeroAuto(){
-  clearInterval(hTimer);
-  hTimer=setInterval(function(){goHero(hIdx+1);},6500);
-}
-
-document.addEventListener('visibilitychange',function(){
-  document.hidden?clearInterval(hTimer):startHeroAuto();
-});
-
-/* Drag / swipe (mouse + touch) */
-function initHeroDrag(){
-  var wrap=document.getElementById('heroWrap');
-  var track=document.getElementById('heroTrack');
-
-  function onStart(x){
-    isDragging=true; dragStartX=x; dragDelta=0;
-    track.style.transition='none';
-    clearInterval(hTimer);
+  function renderContent(i){
+    var m=list[i], src=m.source||currentSource;
+    var href='xem-phim.html?slug='+encodeURIComponent(m.slug)+'&source='+encodeURIComponent(src);
+    content.innerHTML=
+      '<div class="hero-eyebrow">Đang chiếu</div>'+
+      '<h1 class="hero-title">'+esc(m.name)+'</h1>'+
+      (m.origin_name?'<p class="hero-orig">'+esc(m.origin_name)+'</p>':'')+
+      '<div class="ticket hero-ticket">'+
+        (m.quality?'<span class="tk gold">'+esc(m.quality)+'</span>':'')+
+        (m.year?'<span class="tk">'+esc(m.year)+'</span>':'')+
+        (m.episode_current?'<span class="tk teal">'+esc(m.episode_current)+'</span>':'')+
+        '<span class="tk">'+(SRC_NAMES[src]||src)+'</span>'+
+      '</div>'+
+      (m.content?'<p class="hero-desc">'+esc(m.content.replace(/<[^>]*>/g,''))+'</p>':'')+
+      '<div class="hero-btns">'+
+        '<a class="btn btn-gold" href="'+href+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6.5v11l9-5.5-9-5.5z"/></svg>Xem ngay</a>'+
+      '</div>';
   }
-  function onMove(x){
-    if(!isDragging) return;
-    dragDelta=x-dragStartX;
-    applyHeroTransform(dragDelta);
-  }
-  function onEnd(){
-    if(!isDragging) return;
-    isDragging=false;
-    if(Math.abs(dragDelta)>60){
-      goHero(hIdx+(dragDelta<0?1:-1));
-    } else {
-      track.style.transition='transform .55s cubic-bezier(.77,0,.175,1)';
-      applyHeroTransform(0);
-      startHeroAuto();
-    }
-    dragDelta=0;
-  }
+  renderContent(0);
 
-  // Mouse
-  wrap.addEventListener('mousedown',function(e){
-    // chỉ drag khi click vào slide (không phải button/dot/arrow)
-    if(e.target.closest('button')||e.target.closest('.dot')||e.target.closest('.hero-arr')) return;
-    onStart(e.clientX);
-  });
-  window.addEventListener('mousemove',function(e){if(isDragging){e.preventDefault();onMove(e.clientX);}},{passive:false});
-  window.addEventListener('mouseup',function(e){
-    if(!isDragging) return;
-    var wasDrag=Math.abs(dragDelta)>5;
-    onEnd();
-    // Nếu hầu như không drag → coi là click → showIntro
-    if(!wasDrag){
-      var slide=hSlides[hIdx];
-      var slug=slide?slide.querySelector('.btn-p')?slide.querySelector('.btn-p').getAttribute('onclick'):'':'';
-      // extract slug từ onclick string
-      var m=slug.match(/showIntro\('([^']+)','([^']+)'\)/);
-      if(m) showIntro(m[1],m[2]);
-    }
-  });
+  dots.innerHTML=list.map(function(_,i){return '<div class="hero-dot'+(i===0?' on':'')+'" data-i="'+i+'"></div>';}).join('');
+  qsa('.hero-dot',dots).forEach(function(d){d.addEventListener('click',function(){goHero(parseInt(d.dataset.i,10));});});
 
-  // Touch
-  wrap.addEventListener('touchstart',function(e){
-    if(e.target.closest('button')||e.target.closest('.dot')) return;
-    onStart(e.touches[0].clientX);
-  },{passive:true});
-  wrap.addEventListener('touchmove',function(e){onMove(e.touches[0].clientX);},{passive:true});
-  wrap.addEventListener('touchend',onEnd);
+  hIdx=0;
+  function goHero(i){
+    hIdx=(i+hLen)%hLen;
+    qsa('.hero-slide',track).forEach(function(s,j){s.classList.toggle('cur',j===hIdx);});
+    qsa('.hero-dot',dots).forEach(function(d,j){d.classList.toggle('on',j===hIdx);});
+    renderContent(hIdx);
+  }
+  window._heroGo=goHero;
+  if(hTimer) clearInterval(hTimer);
+  if(hLen>1) hTimer=setInterval(function(){goHero(hIdx+1);},6500);
 }
 
 /* ═══════════════════════════════════════
-   CARDS & ROWS
+   TRANG CHỦ (rows theo nguồn hiện tại)
 ═══════════════════════════════════════ */
-var SRC_NAMES={kkphim:'KAKA',nguonc:'NguonCE',vsmov:'VSMUP'};
-
-/* ═══════════════════════════════════════════════════════════════════════
-   NGUỒN C — GỌI TRỰC TIẾP TỪ TRÌNH DUYỆT (không qua server của mình)
-   Lý do: server (Vercel) bị NguonC chặn theo IP hosting (403 kể cả trang
-   chủ). IP nhà mạng cá nhân của người xem thường không bị chặn kiểu này,
-   nên để trình duyệt tự gọi thẳng NguonC. Nếu NguonC không bật CORS cho
-   phép gọi chéo domain thì cách này sẽ không hoạt động — có fallback báo
-   lỗi nhẹ nhàng, không vỡ trang.
-═══════════════════════════════════════════════════════════════════════ */
-var NGUONC_BASE='https://phim.nguonc.com/api';
-
-function nguoncUrl(o){
-  var page=o.page||'1';
-  if(o.slug) return NGUONC_BASE+'/film/'+encodeURIComponent(o.slug);
-  if(o.keyword) return NGUONC_BASE+'/films/search?keyword='+encodeURIComponent(o.keyword);
-  if(o.cat) return NGUONC_BASE+'/films/the-loai/'+encodeURIComponent(o.cat)+'?page='+page;
-  if(o.nation) return NGUONC_BASE+'/films/quoc-gia/'+encodeURIComponent(o.nation)+'?page='+page;
-  if(o.year) return NGUONC_BASE+'/films/nam-phat-hanh/'+encodeURIComponent(o.year)+'?page='+page;
-  if(o.type) return NGUONC_BASE+'/films/danh-sach/'+encodeURIComponent(o.type)+'?page='+page;
-  return NGUONC_BASE+'/films/phim-moi-cap-nhat?page='+page;
-}
-
-function nguoncNormItem(raw){
-  return {
-    name: raw.name||raw.title||'',
-    origin_name: raw.origin_name||raw.original_name||'',
-    slug: raw.slug||'',
-    thumb_url: raw.thumb_url||'',
-    poster_url: raw.poster_url||raw.thumb_url||'',
-    year: raw.publish_year||raw.year||'',
-    quality: raw.quality||'',
-    lang: raw.language||raw.lang||'',
-    episode_current: raw.current_episode||raw.total_episodes||'',
-    time: raw.time||'',
-    source: 'nguonc',
-  };
-}
-
-function nguoncNormList(raw){
-  var items=(raw&&raw.items)||(raw&&raw.data&&raw.data.items)||[];
-  return items.map(nguoncNormItem);
-}
-
-function nguoncNormDetail(raw, slug){
-  var movie=raw&&raw.movie;
-  if(!movie) return null;
-  var category=[],country=[];
-  var cf=movie.category;
-  if(cf&&typeof cf==='object'&&!Array.isArray(cf)){
-    Object.keys(cf).forEach(function(k){
-      var grp=cf[k];if(!grp)return;
-      var gname=(grp.group_name||'').toLowerCase();
-      var lst=(grp.list||[]).map(function(x){return{name:x.name||'',slug:x.slug||x.id||''};});
-      if(gname.indexOf('loại')>=0||gname.indexOf('loai')>=0)category=lst;
-      else if(gname.indexOf('gia')>=0||gname.indexOf('quốc')>=0)country=lst;
-    });
-  }
-  var casts=movie.casts||movie.actor||'';
-  var actor=typeof casts==='string'?casts.split(',').map(function(s){return s.trim();}).filter(Boolean):(Array.isArray(casts)?casts:[]);
-  var dirRaw=movie.director||'';
-  var director=typeof dirRaw==='string'?dirRaw.split(',').map(function(s){return s.trim();}).filter(Boolean):(Array.isArray(dirRaw)?dirRaw:[]);
-  var rawEps=movie.episodes||raw.episodes||[];
-  var episodes=rawEps.map(function(sv){
-    var its=sv.items||sv.server_data||[];
-    return{
-      server_name: sv.server_name||'Server',
-      server_data: its.map(function(e){return{name:e.name||e.slug||'',slug:e.slug||'',link_embed:e.embed||e.link_embed||'',link_m3u8:e.m3u8||e.link_m3u8||''};}),
-    };
-  });
-  return{
-    name: movie.name||'', origin_name: movie.original_name||movie.origin_name||'',
-    slug: movie.slug||slug, content: movie.description||movie.content||'',
-    thumb_url: movie.thumb_url||'', poster_url: movie.poster_url||movie.thumb_url||'',
-    year: movie.publish_year||movie.year||'', quality: movie.quality||'',
-    lang: movie.language||movie.lang||'', episode_current: movie.current_episode||'',
-    time: movie.time||'', actor: actor, director: director, category: category,
-    country: country, episodes: episodes, source: 'nguonc',
-  };
-}
-
-function fetchNguoncDirect(paramsStr){
-  var qp=new URLSearchParams(paramsStr);
-  var o={slug:qp.get('path')||'',keyword:qp.get('keyword')||'',cat:qp.get('cat')||'',
-    nation:qp.get('nation')||'',year:qp.get('year')||'',type:qp.get('type')||'',page:qp.get('page')||'1'};
-  return fetch(nguoncUrl(o),{headers:{'Accept':'application/json'}}).then(function(r){
-    if(!r.ok) throw new Error('http '+r.status);
-    return r.json();
-  }).then(function(raw){
-    if(o.slug){
-      var item=nguoncNormDetail(raw,o.slug);
-      return{status:!!item,source:'nguonc',data:{item:item}};
-    }
-    return{status:true,source:'nguonc',data:{items:nguoncNormList(raw)}};
-  }).catch(function(){
-    // Không gọi được trực tiếp (CORS bị chặn hoặc mạng lỗi) -> trả rỗng,
-    // để giao diện hiện thông báo "chưa có dữ liệu" thay vì vỡ trang.
-    return qp.get('path')?{status:false,source:'nguonc'}:{status:true,source:'nguonc',data:{items:[]}};
-  });
-}
-
-/* Lớp trung gian: mọi nơi gọi API đều đi qua đây. Nếu tham số có
-   source=nguonc thì gọi thẳng trình duyệt -> NguonC; còn lại vẫn đi qua
-   proxy server như bình thường (KKPhim/VSMOV không có vấn đề gì). */
-function apiProxy(paramsStr){
-  if(/(^|&)source=nguonc(&|$)/.test(paramsStr)){
-    return fetchNguoncDirect(paramsStr);
-  }
-  return fetch('/api/proxy?'+paramsStr).then(function(r){return r.json();});
-}
-
-/* Cache nhẹ trong bộ nhớ: lưu lại thông tin (tên, ảnh...) đã có sẵn từ
-   danh sách/lưới phim, để khi bấm vào xem chi tiết, modal hiện NGAY LẬP TỨC
-   (tên phim + poster) trong lúc chờ tải đầy đủ (mô tả, tập phim...) ở nền —
-   giúp cảm giác mở phim nhanh hơn hẳn thay vì luôn phải chờ "Đang tải...". */
-var movieCache={};
-function cacheItem(m){
-  if(m&&m.slug){movieCache[(m.source||currentSource)+'|'+m.slug]=m;}
-  return m;
-}
-
-function cardHtml(m,showBadge){
-  cacheItem(m);
-  var poster=m.poster_url||m.thumb_url||'';
-  var src=m.source||currentSource;
-  return '<div class="card" tabindex="0" onclick="showIntro(\''+m.slug+'\',\''+src+'\')" onkeypress="if(event.key===\'Enter\')showIntro(\''+m.slug+'\',\''+src+'\')">'+
-    '<div class="ciw">'+
-      (showBadge?'<div class="src-tag">'+(SRC_NAMES[src]||src)+'</div>':'')+
-      '<img src="'+poster+'" data-src="'+esc(poster)+'" data-source="'+src+'" loading="lazy" alt="'+esc(m.name)+'" onerror="imgFallback(this)">'+
-      (m.episode_current?'<div class="ep-badge">'+m.episode_current+'</div>':'')+
-      '<div class="card-ov"><div class="play-ic"><span style="color:#000;font-size:13px;padding-left:2px">&#9654;</span></div></div>'+
-    '</div>'+
-    '<div class="card-t">'+esc(m.name)+'</div>'+
-  '</div>';
-}
-
-/* Ảnh gốc tải trực tiếp lỗi (thường do CDN chặn hotlink vì Referer không
-   khớp) -> thử lại 1 lần qua route /api/img (server tự gắn đúng Referer).
-   Nếu vẫn lỗi thì thôi, tránh lặp vô hạn (data-tried đánh dấu đã thử). */
-window.imgFallback=function(img){
-  if(img.dataset.tried){img.style.opacity='0';img.style.background='#1a1a2a';img.onerror=null;return;}
-  img.dataset.tried='1';
-  var src=img.dataset.src||img.src, source=img.dataset.source||currentSource;
-  if(!src){img.style.opacity='0';img.style.background='#1a1a2a';return;}
-  img.src='/api/img?url='+encodeURIComponent(src)+'&source='+encodeURIComponent(source);
-};
-
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-/* Escape an toàn cho chuỗi chèn bên trong onclick="...('...')" */
-function jsEsc(s){return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
-
-/* Row scroll-ngang (trang chủ) */
-function skRow(title){
-  var div=document.createElement('div');div.className='row';
-  div.innerHTML='<div class="row-hd"><div class="row-title">'+title+'</div></div>'+
-    '<div class="list-wrap">'+Array(10).fill('<div class="sk-card"><div class="sk-img sk"></div><div class="sk-txt sk"></div></div>').join('')+'</div>';
-  return div;
-}
-
 function addRow(title,params,placeholder){
   var full=(params||'')+'&source='+encodeURIComponent(currentSource);
   return apiProxy(full).then(function(res){
     var items=(res.data&&res.data.items)||[];
     if(!items.length){if(placeholder)placeholder.remove();return;}
-    var html='<div class="row-hd"><div class="row-title">'+title+'</div><span class="row-more">Xem thêm &rsaquo;</span></div>'+
-      '<div class="list-wrap">'+items.map(function(m){return cardHtml(m,false);}).join('')+'</div>';
-    if(placeholder){placeholder.innerHTML=html;}
-    else{var d=document.createElement('div');d.className='row';d.innerHTML=html;document.getElementById('content').appendChild(d);}
+    var html='<div class="section-hd"><div><div class="section-title">'+title+'</div></div>'+
+      '<a class="section-more" href="#" data-params="'+params+'" data-label="'+esc(title)+'">Xem thêm &rsaquo;</a></div>'+
+      '<div class="row-scroll">'+items.map(function(m){return cardHtml(m,false);}).join('')+'</div>';
+    if(placeholder){
+      placeholder.innerHTML=html;
+      var more=qs('.section-more',placeholder);
+      if(more)more.addEventListener('click',function(e){e.preventDefault();setActiveNav(null);showFilterPage(title,params,false);});
+    }
   }).catch(function(){if(placeholder)placeholder.remove();});
 }
 
+function loadHome(){
+  var content=qs('#content');
+  qs('#heroWrap').style.display='';
+  content.innerHTML='';
+  content.className='';
+
+  apiProxy('source='+encodeURIComponent(currentSource)).then(function(res){
+    var items=(res.data&&res.data.items)||[];
+    if(!items.length){
+      qs('#heroWrap').style.display='none';
+      content.innerHTML='<div class="section"><div class="empty-state" style="padding:100px 20px"><div class="ico">&#128250;</div><p>Nguồn này hiện chưa trả về dữ liệu. Thử đổi sang nguồn khác ở góc trên bên phải nhé.</p></div></div>';
+      return;
+    }
+    buildHero(items.slice(0,6));
+
+    var s0=document.createElement('section');s0.className='section';
+    s0.innerHTML='<div class="section-hd"><div><div class="section-eyebrow">Mới nhất</div><div class="section-title">Vừa cập nhật</div></div></div>'+
+      '<div class="row-scroll">'+items.map(function(m){return cardHtml(m,false);}).join('')+'</div>';
+    content.appendChild(s0);
+
+    var defs=navDefs.slice(0,7);
+    var placeholders=defs.map(function(d){
+      var el=document.createElement('section');el.className='section';
+      el.innerHTML='<div class="section-hd"><div><div class="section-title">'+esc(d[0])+'</div></div></div><div class="row-scroll">'+skeletonCards(7)+'</div>';
+      content.appendChild(el);
+      return el;
+    });
+    defs.forEach(function(d,i){addRow(esc(d[0]),d[1],placeholders[i]);});
+  }).catch(function(){
+    qs('#heroWrap').style.display='none';
+    content.innerHTML='<div class="section"><div class="empty-state" style="padding:100px 20px"><div class="ico">&#9888;&#65039;</div><p>Không kết nối được tới nguồn này. Thử đổi nguồn khác nhé.</p></div></div>';
+  });
+}
+
 /* ═══════════════════════════════════════
-   TRANG LỌC – grid nhiều cột + phân trang
+   TRANG LỌC / KẾT QUẢ (grid)
 ═══════════════════════════════════════ */
 function showFilterPage(title, params, isMultiSource){
-  var content=document.getElementById('content');
-  var heroWrap=document.getElementById('heroWrap');
-  heroWrap.style.display='none';
-  content.innerHTML='';
-  content.className='filter-page';
-
-  // Skeleton grid
-  var skHtml='<div class="row-hd"><div class="row-title">'+title+'</div></div>'+
-    '<div class="grid-wrap" id="filterGrid">'+
-      Array(24).fill('<div class="sk-card"><div class="sk-img sk"></div><div class="sk-txt sk"></div></div>').join('')+
-    '</div>';
-  content.innerHTML=skHtml;
+  if(hTimer){clearInterval(hTimer);hTimer=null;}
+  qs('#heroWrap').style.display='none';
+  var content=qs('#content');
+  content.className='';
+  content.innerHTML='<div class="section"><div class="section-hd"><div><div class="section-title">'+title+'</div></div></div>'+
+    '<div class="grid" id="filterGrid">'+skeletonCards(18)+'</div></div>';
 
   function render(items){
-    if(!items.length){document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Không tìm thấy phim nào. Thử đổi nguồn phim khác ở góc trên bên phải nhé.</p>';return;}
-    document.getElementById('filterGrid').innerHTML=items.map(function(m){return cardHtml(m,!!isMultiSource);}).join('');
+    if(!items.length){
+      qs('#filterGrid').innerHTML='<div class="empty-state"><div class="ico">&#128269;</div><p>Không tìm thấy phim nào. Thử đổi nguồn phim khác ở góc trên bên phải nhé.</p></div>';
+      return;
+    }
+    qs('#filterGrid').innerHTML=items.map(function(m){return cardHtml(m,!!isMultiSource);}).join('');
+  }
+  function fail(){
+    qs('#filterGrid').innerHTML='<div class="empty-state"><div class="ico">&#9888;&#65039;</div><p>Có lỗi khi tải dữ liệu, thử lại sau nhé.</p></div>';
   }
 
   if(isMultiSource){
-    // Tìm đa nguồn: gọi RIÊNG từng nguồn song song rồi gộp — NguonC đi
-    // thẳng qua trình duyệt (apiProxy tự nhận diện), không phụ thuộc vào
-    // backend nữa nên không bị treo/timeout chờ NguonC như trước.
-    Promise.all(['kkphim','vsmov','nguonc'].map(function(s){
+    Promise.all(SRC_LIST.map(function(s){
       return apiProxy((params||'')+'&source='+s).catch(function(){return{data:{items:[]}};});
     })).then(function(resArr){
       var items=[];
       resArr.forEach(function(res){items=items.concat((res&&res.data&&res.data.items)||[]);});
       render(items);
-    }).catch(function(){
-      document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Có lỗi khi tải dữ liệu, thử lại sau nhé.</p>';
-    });
+    }).catch(fail);
   } else {
-    var full=(params||'')+'&source='+encodeURIComponent(currentSource);
-    apiProxy(full).then(function(res){
+    apiProxy((params||'')+'&source='+encodeURIComponent(currentSource)).then(function(res){
       render((res.data&&res.data.items)||[]);
-    }).catch(function(){
-      document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Có lỗi khi tải dữ liệu, thử lại sau nhé.</p>';
-    });
+    }).catch(fail);
   }
+  window.scrollTo({top:0,behavior:'instant' in window?'instant':'auto'});
 }
 
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
-/* ═══════════════════════════════════════
-   DỰNG MENU ĐỘNG (Thể loại / Quốc gia)
-   Lấy danh mục cố định từ KKPhim (nguồn ổn định, có endpoint /the-loai
-   và /quoc-gia chính thức) — dùng chung slug để lọc trên bất kỳ nguồn
-   nào đang được chọn, vì cả 3 nguồn đều theo cùng một quy ước đặt slug.
-═══════════════════════════════════════ */
-var CAT_ICONS=['&#9876;&#65039;','&#128150;','&#128123;','&#128105;&#8205;&#127917;','&#128105;&#8205;&#128188;','&#127749;','&#9876;','&#127917;','&#127916;','&#9819;','&#128100;','&#128171;'];
-var NATION_ICONS={'trung-quoc':'&#128009;','han-quoc':'&#127917;','au-my':'&#127760;','nhat-ban':'&#127967;&#65039;','thai-lan':'&#127481;&#127469;','viet-nam':'&#127483;&#127475;'};
-
-function buildDynamicNav(){
-  var navCenter=document.getElementById('navCenter');
-  var reqs=[
-    fetch('/api/proxy?list=the-loai&source=kkphim').then(function(r){return r.json();}).catch(function(){return null;}),
-    fetch('/api/proxy?list=quoc-gia&source=kkphim').then(function(r){return r.json();}).catch(function(){return null;})
-  ];
-  return Promise.all(reqs).then(function(res){
-    var cats=(res[0]&&res[0].data&&res[0].data.items)||[];
-    var nats=(res[1]&&res[1].data&&res[1].data.items)||[];
-    navDefs=[];
-    var html='<button class="nb on" onclick="navFilter(this,\'\',\'Trang Chủ\')">Trang Chủ</button>';
-
-    // Định dạng: Phim Lẻ / Phim Bộ / Hoạt Hình / TV Shows
-    [['phim-le','&#127909; Phim Lẻ'],['phim-bo','&#128250; Phim Bộ'],['hoat-hinh','&#127917; Hoạt Hình'],['tv-shows','&#128250; TV Shows']].forEach(function(t){
-      var params='type='+t[0];
-      navDefs.push([t[1],params]);
-      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\''+t[1].replace(/&#\d+;/g,'').trim()+'\')">'+t[1]+'</button>';
-    });
-
-    // Thể loại (tối đa 8)
-    cats.slice(0,8).forEach(function(c,i){
-      var label=(CAT_ICONS[i%CAT_ICONS.length]+' '+esc(c.name));
-      var params='cat='+c.slug;
-      navDefs.push([label,params]);
-      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\''+jsEsc(c.name)+'\')">'+label+'</button>';
-    });
-
-    // Quốc gia (tối đa 5)
-    nats.slice(0,5).forEach(function(c){
-      var icon=NATION_ICONS[c.slug]||'&#127758;';
-      var label=(icon+' '+esc(c.name));
-      var params='nation='+c.slug;
-      navDefs.push([label,params]);
-      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\''+jsEsc(c.name)+'\')">'+label+'</button>';
-    });
-
-    // Năm phát hành nhanh
-    ['2025','2024','2023'].forEach(function(y){
-      var params='year='+y;
-      navDefs.push(['&#128197; '+y,params]);
-      html+='<button class="nb" onclick="navFilter(this,\''+params+'\',\'Năm '+y+'\')">&#128197; '+y+'</button>';
-    });
-
-    navCenter.innerHTML=html;
-  });
-}
-
-/* ═══════════════════════════════════════
-   TRANG CHỦ theo nguồn hiện tại
-═══════════════════════════════════════ */
-function loadHome(){
-  var content=document.getElementById('content');
-  var heroWrap=document.getElementById('heroWrap');
-  heroWrap.style.display='';
-  content.className='rows-wrap';
-  content.innerHTML='';
-
-  apiProxy('source='+encodeURIComponent(currentSource)).then(function(res){
-    var items=(res.data&&res.data.items)||[];
-    if(!items.length){
-      content.innerHTML='<p style="color:rgba(255,255,255,.4);text-align:center;padding:80px 0">Nguồn này hiện chưa trả về dữ liệu. Thử đổi sang nguồn khác ở góc trên bên phải nhé.</p>';
-      heroWrap.style.display='none';
-      return;
-    }
-    buildHero(items.slice(0,5));
-
-    var r0=document.createElement('div');r0.className='row';
-    r0.innerHTML='<div class="row-hd"><div class="row-title">&#128293; Mới Cập Nhật</div><span class="row-more">Xem thêm &rsaquo;</span></div>'+
-      '<div class="list-wrap">'+items.map(function(m){return cardHtml(m,false);}).join('')+'</div>';
-    content.appendChild(r0);
-
-    // Skeleton + fetch song song các row còn lại, lấy từ menu vừa dựng động
-    var defs=navDefs.filter(function(d){return d[1].indexOf('type=')===0||d[1].indexOf('cat=')===0||d[1].indexOf('nation=')===0;}).slice(0,7);
-    var phs=defs.map(function(d){
-      var el=skRow(d[0]);
-      content.appendChild(el);
-      return el;
-    });
-    defs.forEach(function(d,i){addRow(d[0],d[1],phs[i]);});
-  }).catch(function(){
-    content.innerHTML='<p style="color:rgba(255,255,255,.4);text-align:center;padding:80px 0">Không kết nối được tới nguồn này. Thử đổi nguồn khác nhé.</p>';
-    heroWrap.style.display='none';
-  });
-}
-
-function init(){
-  document.getElementById('srcSelect').value=currentSource;
-  buildDynamicNav().then(loadHome);
-}
-
-/* ═══════════════════════════════════════
-   SHOW INTRO – fix poster loading
-═══════════════════════════════════════ */
-window.showIntro=function(slug,source){
-  source=source||currentSource;
-  var modal=document.getElementById('intro');
-  modal.style.display='flex';
-  document.getElementById('iMeta').innerHTML='';
-  document.getElementById('iCats').innerHTML='';
-  document.getElementById('iBanner').classList.remove('err');
-
-  // Hiện NGAY thông tin đã có sẵn từ lưới/danh sách (tên, ảnh, năm) trong
-  // lúc chờ tải chi tiết đầy đủ (mô tả, tập phim) ở nền -> cảm giác mở
-  // nhanh hơn hẳn, không phải nhìn "Đang tải..." trống trơn mỗi lần.
-  var quick=movieCache[source+'|'+slug];
-  document.getElementById('iTitle').textContent=quick?quick.name:'Đang tải...';
-  document.getElementById('iOrig').textContent=(quick&&quick.origin_name)||'';
-  document.getElementById('iDesc').textContent=quick?'Đang tải nội dung phim...':'';
-  var qImg=(quick&&(quick.poster_url||quick.thumb_url))||'';
-  document.getElementById('iBanner').src=qImg;
-  document.getElementById('iPoster').src=qImg;
-
-  apiProxy('path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source)).then(function(r){
-    active=r.data&&r.data.item;
-    if(!active){
-      document.getElementById('iTitle').textContent='Không tìm thấy phim này ở nguồn '+(SRC_NAMES[source]||source)+'.';
-      document.getElementById('iDesc').textContent='';
-      return;
-    }
-    active.source=active.source||source;
-
-    // ── Ảnh: banner dùng thumb_url (ngang), poster dùng poster_url (dọc) ──
-    var banner = active.thumb_url || active.poster_url || '';
-    var poster  = active.poster_url || active.thumb_url || '';
-
-    // Preload banner trước để check lỗi
-    var src=active.source||source;
-    if(banner){
-      var img=new Image();
-      img.onload=function(){
-        document.getElementById('iBanner').classList.remove('err');
-        document.getElementById('iBanner').src=banner;
-      };
-      img.onerror=function(){
-        // Thử lại qua /api/img (gắn đúng Referer, hay gặp với KKPhim bị chặn hotlink)
-        var img2=new Image();
-        img2.onload=function(){document.getElementById('iBanner').src=img2.src;};
-        img2.onerror=function(){document.getElementById('iBanner').src=poster;}; // hết cách, dùng poster thay
-        img2.src='/api/img?url='+encodeURIComponent(banner)+'&source='+encodeURIComponent(src);
-      };
-      img.src=banner;
-    }
-    document.getElementById('iPoster').src=poster;
-    document.getElementById('iPoster').setAttribute('data-src',poster);
-    document.getElementById('iPoster').setAttribute('data-source',src);
-    document.getElementById('iPoster').onerror=function(){imgFallback(this);};
-
-    document.getElementById('iTitle').textContent=active.name;
-    document.getElementById('iOrig').textContent=active.origin_name||'';
-    document.getElementById('iDesc').textContent=(active.content||'').replace(/<[^>]*>/g,'');
-    document.getElementById('iMeta').innerHTML=[
-      {l:'Quốc gia',v:(active.country&&active.country[0]&&active.country[0].name)||'N/A'},
-      {l:'Năm',     v:active.year||'N/A'},
-      {l:'Số tập',  v:active.episode_current||'N/A'},
-      {l:'Chất lượng',v:active.quality||'N/A'},
-    ].map(function(f){return '<div class="ib-field"><div class="ib-lbl">'+f.l+'</div><div class="ib-val">'+f.v+'</div></div>';}).join('');
-    document.getElementById('iCats').innerHTML=(active.category||[]).map(function(c){return '<span class="ctag">'+esc(c.name)+'</span>';}).join('');
-    document.getElementById('btnStart').focus();
-  });
-};
-
-window.closeIntro=function(){document.getElementById('intro').style.display='none';};
-
-/* ═══════════════════════════════════════
-   PLAYER
-═══════════════════════════════════════ */
-window.startPhim=function(){
-  if(!active) return;
-  var srv=(active.episodes&&active.episodes[0]&&active.episodes[0].server_data)||[];
-  document.getElementById('pTitle').textContent=active.name;
-  document.getElementById('video').src=(srv[0]&&srv[0].link_embed)||'';
-  document.getElementById('intro').style.display='none';
-  document.getElementById('player').style.display='flex';
-
-  var epsHtml=srv.map(function(e,i){
-    return '<button class="epb'+(i===0?' on':'')+'" onclick="changeEp(\''+e.link_embed+'\',this)">Tập '+esc(e.name)+'</button>';
-  }).join('');
-  document.getElementById('tEps').innerHTML='<div class="eps-grid">'+epsHtml+'</div>';
-  document.getElementById('epsMob').innerHTML=epsHtml;
-
-  document.getElementById('tInfo').innerHTML=
-    '<img class="si-poster" src="'+(active.poster_url||'')+'" alt="">'+
-    '<div class="si-title">'+esc(active.name)+'</div>'+
-    (active.origin_name?'<div class="si-row">'+esc(active.origin_name)+'</div>':'')+
-    '<div class="si-row">Năm: <b>'+(active.year||'N/A')+'</b></div>'+
-    '<div class="si-row">Quốc gia: <b>'+((active.country&&active.country[0]&&active.country[0].name)||'N/A')+'</b></div>'+
-    '<div class="si-row">Thể loại: <b>'+(active.category||[]).map(function(c){return c.name;}).join(', ')+'</b></div>'+
-    '<div class="si-row">Số tập: <b>'+(active.episode_current||'N/A')+'</b></div>'+
-    '<div class="si-desc">'+((active.content||'').replace(/<[^>]*>/g,'').slice(0,320))+'...</div>';
-
-  loadRec();
-};
-
-function loadRec(){
-  var src=active.source||currentSource;
-  var cat=(active&&active.category&&active.category[0]&&active.category[0].slug)||'hanh-dong';
-  apiProxy('cat='+cat+'&source='+encodeURIComponent(src)).then(function(r){
-    var items=((r.data&&r.data.items)||[]).filter(function(m){return m.slug!==active.slug;}).slice(0,12);
-    document.getElementById('tRec').innerHTML=items.map(function(m){
-      return '<div class="rc" onclick="swapMovie(\''+m.slug+'\',\''+(m.source||src)+'\')">'+
-        '<img src="'+(m.poster_url||'')+'" loading="lazy" alt="'+esc(m.name)+'">'+
-        '<div style="flex:1;min-width:0">'+
-          '<div class="rc-n">'+esc(m.name)+'</div>'+
-          '<div class="rc-m">'+(m.episode_current||'')+' &middot; '+(m.year||'')+'</div>'+
-        '</div></div>';
-    }).join('');
-  }).catch(function(){});
-}
-
-window.swapMovie=function(slug,source){
-  document.getElementById('video').src='';
-  apiProxy('path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source||currentSource)).then(function(r){
-    active=r.data&&r.data.item;if(active){active.source=active.source||source||currentSource;startPhim();}
-  });
-};
-
-window.changeEp=function(url,btn){
-  document.getElementById('video').src=url;
-  var txt=btn.textContent;
-  document.querySelectorAll('.epb').forEach(function(b){b.classList.toggle('on',b.textContent===txt);});
-};
-
-window.closePlayer=function(){
-  document.getElementById('player').style.display='none';
-  document.getElementById('video').src='';
-};
-
-function stab(el,pid){
-  document.querySelectorAll('.stab').forEach(function(t){t.classList.remove('on');});
-  document.querySelectorAll('.sp').forEach(function(p){p.classList.remove('on');});
-  el.classList.add('on');document.getElementById(pid).classList.add('on');
-}
-
-/* ═══════════════════════════════════════
-   NAV FILTER + SEARCH
-═══════════════════════════════════════ */
-window.navFilter=function(el,params,label){
-  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
-  el.classList.add('on');
-  if(!params){loadHome();return;}
-  showFilterPage(label||'Kết quả lọc', params, false);
-};
-
-document.getElementById('search').addEventListener('keypress',function(e){
-  if(e.key==='Enter' && e.target.value.trim()){
-    document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
-    // Tìm kiếm trên CẢ 3 NGUỒN cùng lúc — kết quả gắn badge nguồn tương ứng
-    showFilterPage('&#128269; Kết quả cho "'+esc(e.target.value)+'" (mọi nguồn)','keyword='+encodeURIComponent(e.target.value), true);
-  }
-});
-
-document.getElementById('srcSelect').addEventListener('change',function(e){
-  currentSource=e.target.value;
-  localStorage.setItem('kpc_source',currentSource);
-  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
-  var homeBtn=document.querySelector('.nb');
-  if(homeBtn) homeBtn.classList.add('on');
+initSourceSwitcher(function(){
+  setActiveNav(qs('.nav-link[href="index.html"]'));
   loadHome();
 });
+initSearchToggle(function(kw){
+  setActiveNav(null);
+  showFilterPage('Kết quả cho "'+esc(kw)+'" (mọi nguồn)','keyword='+encodeURIComponent(kw),true);
+});
+initMobileMenu();
 
-init();
+qs('#tabCat').addEventListener('click',function(){qs('#mobileMenu').classList.toggle('open');});
+qs('#tabSearch').addEventListener('click',function(){
+  var box=qs('#searchBox');box.classList.add('open');box.focus();
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+qs('#tabSrc').addEventListener('click',function(e){e.stopPropagation();qs('#srcMenu').classList.toggle('open');});
+
+buildDynamicNav().then(loadHome);
 </script>
 </body>
 </html>
