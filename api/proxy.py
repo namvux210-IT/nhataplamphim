@@ -13,11 +13,18 @@ GHI CHÚ QUAN TRỌNG VỀ ĐỘ TIN CẬY DỮ LIỆU:
 - NguonC (phim.nguonc.com): xác nhận trực tiếp từ tài liệu chính thức
   (ảnh chụp api-document do người dùng cung cấp) — TẤT CẢ URL endpoint +
   cấu trúc phong bì phản hồi (status/paginate/items) đã khớp 100% —
-  độ tin cậy CAO. Chỉ riêng TÊN FIELD của từng phim (name/slug/thumb_url…)
-  và cấu trúc "episodes" bên trong endpoint chi tiết KHÔNG được liệt kê rõ
-  trong tài liệu (chỉ nói chung là "movie"/"tập phim"), nên hàm
-  normalize_nguonc() vẫn được viết PHÒNG THỦ (thử nhiều tên field khả dĩ)
-  để không vỡ trang nếu lệch tên field.
+  độ tin cậy CAO cho URL. Chỉ riêng TÊN FIELD của từng phim
+  (name/slug/thumb_url…) và cấu trúc "episodes" bên trong endpoint chi
+  tiết KHÔNG được liệt kê rõ trong tài liệu, nên phần normalize vẫn được
+  viết PHÒNG THỦ (thử nhiều tên field khả dĩ) để không vỡ trang.
+  ĐÃ XÁC NHẬN QUA ?diag=1: NguonC trả 403 (chặn bởi WAF/bot-protection),
+  trong khi KKPhim/VSMOV vẫn 200 OK bình thường -> đã thêm cơ chế
+  warm_nguonc() (ghé trang chủ lấy cookie trước khi gọi API) để thử vượt
+  qua. Nếu sau khi deploy bản này ?diag=1 vẫn báo 403 cho nguonc, nghĩa là
+  WAF của họ dùng cơ chế chặn nâng cao hơn (JS challenge/Cloudflare
+  Turnstile...) mà việc gọi API thuần server-to-server không thể vượt qua
+  được — khi đó nên coi NguonC là nguồn không khả dụng để tích hợp, trang
+  web vẫn hoạt động bình thường với 2 nguồn còn lại.
 - VSMOV (vsmov.com/api): xác nhận cấu trúc endpoint từ trang
   vsmov.com/api-document — độ tin cậy CAO cho endpoint, TRUNG BÌNH cho
   tên field chi tiết (trang doc không hiển thị JSON mẫu đầy đủ do là tab JS).
@@ -53,6 +60,11 @@ HEADERS_BASE = {
                   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
 }
 REFERER = {
     "kkphim": "https://phimapi.com/",
@@ -70,10 +82,35 @@ _retry = Retry(total=3, backoff_factor=0.4, status_forcelist=[429, 500, 502, 503
 _session.mount("https://", HTTPAdapter(max_retries=_retry, pool_maxsize=20))
 _session.mount("http://", HTTPAdapter(max_retries=_retry, pool_maxsize=20))
 
+# ── "Làm nóng" phiên cho NguonC ──────────────────────────────────────────
+# Diag đo được: NguonC trả 403 (WAF chặn thẳng) trong khi KKPhim/VSMOV vẫn
+# 200 OK bình thường -> khả năng cao WAF của NguonC yêu cầu cookie phiên
+# hợp lệ (được cấp khi ghé 1 trang HTML thường trước đó), request "lạ" gọi
+# thẳng vào /api/... bị từ chối ngay. Khắc phục: ghé trang chủ 1 lần lấy
+# cookie, dùng chung Session (giữ cookie) cho các lần gọi API kế tiếp
+# trong cùng lượt khởi động serverless function.
+_nguonc_warmed = False
+
+
+def warm_nguonc():
+    global _nguonc_warmed
+    if _nguonc_warmed:
+        return
+    try:
+        h = dict(HEADERS_BASE)
+        h["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        _session.get("https://phim.nguonc.com/", headers=h, timeout=TIMEOUT)
+    except Exception:
+        pass
+    _nguonc_warmed = True
+
+
 
 def get_json(url, source=None):
     if not url:
         return None
+    if source == "nguonc":
+        warm_nguonc()
     headers = dict(HEADERS_BASE)
     if source and REFERER.get(source):
         headers["Referer"] = REFERER[source]
@@ -416,6 +453,8 @@ def img_proxy():
     source = request.args.get("source", "kkphim").strip()
     if not url or not url.startswith(("http://", "https://")):
         return Response(status=400)
+    if source == "nguonc":
+        warm_nguonc()
     headers = dict(HEADERS_BASE)
     headers["Accept"] = "image/webp,image/avif,image/*,*/*;q=0.8"
     if REFERER.get(source):
@@ -452,6 +491,9 @@ def handle():
         result = {}
         for s in SOURCES:
             info = {"url": url_home(s, "1")}
+            if s == "nguonc":
+                warm_nguonc()
+                info["warmed_session"] = True
             try:
                 headers = dict(HEADERS_BASE)
                 if REFERER.get(s):
