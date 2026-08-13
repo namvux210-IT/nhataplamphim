@@ -30,14 +30,19 @@ GHI CHÚ QUAN TRỌNG VỀ ĐỘ TIN CẬY DỮ LIỆU:
      sập, đổi domain...): mở .../api/proxy?diag=1 — trả về http_status,
      có parse được JSON không, và số phim lấy được của TỪNG nguồn trong
      1 lần gọi duy nhất.
+  => Route /api/img?url=...&source=... : proxy ảnh qua server để gắn đúng
+     Referer, dùng làm phương án dự phòng khi ảnh gốc bị chặn hotlink
+     (xem imgFallback() trong index.html).
 
 Deploy trên Vercel: file này export biến `app` (Flask, chuẩn WSGI) —
 Vercel's Python runtime tự nhận diện và chạy được, xem vercel.json đi kèm.
 ================================================================================
 """
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__)
@@ -54,7 +59,16 @@ REFERER = {
     "nguonc": "https://phim.nguonc.com/",
     "vsmov": "https://vsmov.com/",
 }
-TIMEOUT = 10
+TIMEOUT = 12
+
+# Session dùng lại kết nối (keep-alive) giữa các lần gọi trong cùng 1 lần
+# khởi động serverless function -> phản hồi nhanh hơn. Có retry tự động
+# (3 lần, backoff tăng dần) để vượt qua lỗi mạng/timeout tạm thời — đây là
+# nguyên nhân phổ biến khiến 1 nguồn thỉnh thoảng trả về rỗng.
+_session = requests.Session()
+_retry = Retry(total=3, backoff_factor=0.4, status_forcelist=[429, 500, 502, 503, 504])
+_session.mount("https://", HTTPAdapter(max_retries=_retry, pool_maxsize=20))
+_session.mount("http://", HTTPAdapter(max_retries=_retry, pool_maxsize=20))
 
 
 def get_json(url, source=None):
@@ -64,7 +78,7 @@ def get_json(url, source=None):
     if source and REFERER.get(source):
         headers["Referer"] = REFERER[source]
     try:
-        r = requests.get(url, headers=headers, timeout=TIMEOUT)
+        r = _session.get(url, headers=headers, timeout=TIMEOUT)
         if r.status_code == 200:
             return r.json()
     except Exception:
@@ -386,6 +400,39 @@ def norm_detail(raw, source, slug):
 # ROUTE CHÍNH
 # ═══════════════════════════════════════════════════════════════════════════
 
+@app.route("/api/img")
+def img_proxy():
+    """
+    Proxy ảnh poster qua server để gắn đúng header Referer/User-Agent của
+    nguồn gốc. Nguyên nhân phổ biến khiến MỘT SỐ ảnh (thường là KKPhim)
+    không hiển thị: CDN ảnh bật chống hotlink, chỉ chấp nhận request có
+    Referer trỏ về đúng domain của họ — mà khi <img> tải trực tiếp từ trang
+    web của bạn, trình duyệt gửi Referer là domain CỦA BẠN nên bị chặn.
+    Frontend chỉ gọi route này làm phương án DỰ PHÒNG khi ảnh gốc lỗi
+    (xem hàm imgFallback trong index.html) — ảnh tải trực tiếp vẫn được ưu
+    tiên trước để giữ tốc độ nhanh nhất.
+    """
+    url = request.args.get("url", "").strip()
+    source = request.args.get("source", "kkphim").strip()
+    if not url or not url.startswith(("http://", "https://")):
+        return Response(status=400)
+    headers = dict(HEADERS_BASE)
+    headers["Accept"] = "image/webp,image/avif,image/*,*/*;q=0.8"
+    if REFERER.get(source):
+        headers["Referer"] = REFERER[source]
+    try:
+        r = _session.get(url, headers=headers, timeout=TIMEOUT, stream=True)
+        if r.status_code != 200:
+            return Response(status=502)
+        return Response(
+            r.content,
+            content_type=r.headers.get("Content-Type", "image/jpeg"),
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+    except Exception:
+        return Response(status=502)
+
+
 @app.route("/api/proxy")
 def handle():
     source = (request.args.get("source") or "kkphim").strip()
@@ -409,18 +456,23 @@ def handle():
                 headers = dict(HEADERS_BASE)
                 if REFERER.get(s):
                     headers["Referer"] = REFERER[s]
-                r = requests.get(info["url"], headers=headers, timeout=TIMEOUT)
+                r = _session.get(info["url"], headers=headers, timeout=TIMEOUT)
                 info["http_status"] = r.status_code
                 try:
                     j = r.json()
                     info["json_ok"] = True
                     info["items_found"] = len(norm_list(j, s))
-                except Exception:
+                except Exception as pe:
                     info["json_ok"] = False
                     info["items_found"] = 0
+                    info["parse_error"] = str(pe)
                     info["body_preview"] = r.text[:200]
+            except requests.exceptions.Timeout:
+                info["error"] = "TIMEOUT sau " + str(TIMEOUT) + "s — nguồn phản hồi quá chậm hoặc chặn request."
+            except requests.exceptions.ConnectionError as ce:
+                info["error"] = "CONNECTION_ERROR — " + str(ce)[:200]
             except Exception as e:
-                info["error"] = str(e)
+                info["error"] = str(e)[:200]
             result[s] = info
         return jsonify({"status": True, "diag": result})
 
@@ -446,7 +498,9 @@ def handle():
         resp = {"status": True, "source": source, "data": {"item": item}}
         if debug:
             resp["_raw"] = raw
-        return jsonify(resp)
+        r = jsonify(resp)
+        r.headers["Cache-Control"] = "public, max-age=60"
+        return r
 
     # ── Tìm kiếm: source=all -> tìm song song cả 3 nguồn ──
     if kw:
