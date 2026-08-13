@@ -478,6 +478,115 @@ function initHeroDrag(){
 ═══════════════════════════════════════ */
 var SRC_NAMES={kkphim:'KKPhim',nguonc:'Nguồn C',vsmov:'VSMOV'};
 
+/* ═══════════════════════════════════════════════════════════════════════
+   NGUỒN C — GỌI TRỰC TIẾP TỪ TRÌNH DUYỆT (không qua server của mình)
+   Lý do: server (Vercel) bị NguonC chặn theo IP hosting (403 kể cả trang
+   chủ). IP nhà mạng cá nhân của người xem thường không bị chặn kiểu này,
+   nên để trình duyệt tự gọi thẳng NguonC. Nếu NguonC không bật CORS cho
+   phép gọi chéo domain thì cách này sẽ không hoạt động — có fallback báo
+   lỗi nhẹ nhàng, không vỡ trang.
+═══════════════════════════════════════════════════════════════════════ */
+var NGUONC_BASE='https://phim.nguonc.com/api';
+
+function nguoncUrl(o){
+  var page=o.page||'1';
+  if(o.slug) return NGUONC_BASE+'/film/'+encodeURIComponent(o.slug);
+  if(o.keyword) return NGUONC_BASE+'/films/search?keyword='+encodeURIComponent(o.keyword);
+  if(o.cat) return NGUONC_BASE+'/films/the-loai/'+encodeURIComponent(o.cat)+'?page='+page;
+  if(o.nation) return NGUONC_BASE+'/films/quoc-gia/'+encodeURIComponent(o.nation)+'?page='+page;
+  if(o.year) return NGUONC_BASE+'/films/nam-phat-hanh/'+encodeURIComponent(o.year)+'?page='+page;
+  if(o.type) return NGUONC_BASE+'/films/danh-sach/'+encodeURIComponent(o.type)+'?page='+page;
+  return NGUONC_BASE+'/films/phim-moi-cap-nhat?page='+page;
+}
+
+function nguoncNormItem(raw){
+  return {
+    name: raw.name||raw.title||'',
+    origin_name: raw.origin_name||raw.original_name||'',
+    slug: raw.slug||'',
+    thumb_url: raw.thumb_url||'',
+    poster_url: raw.poster_url||raw.thumb_url||'',
+    year: raw.publish_year||raw.year||'',
+    quality: raw.quality||'',
+    lang: raw.language||raw.lang||'',
+    episode_current: raw.current_episode||raw.total_episodes||'',
+    time: raw.time||'',
+    source: 'nguonc',
+  };
+}
+
+function nguoncNormList(raw){
+  var items=(raw&&raw.items)||(raw&&raw.data&&raw.data.items)||[];
+  return items.map(nguoncNormItem);
+}
+
+function nguoncNormDetail(raw, slug){
+  var movie=raw&&raw.movie;
+  if(!movie) return null;
+  var category=[],country=[];
+  var cf=movie.category;
+  if(cf&&typeof cf==='object'&&!Array.isArray(cf)){
+    Object.keys(cf).forEach(function(k){
+      var grp=cf[k];if(!grp)return;
+      var gname=(grp.group_name||'').toLowerCase();
+      var lst=(grp.list||[]).map(function(x){return{name:x.name||'',slug:x.slug||x.id||''};});
+      if(gname.indexOf('loại')>=0||gname.indexOf('loai')>=0)category=lst;
+      else if(gname.indexOf('gia')>=0||gname.indexOf('quốc')>=0)country=lst;
+    });
+  }
+  var casts=movie.casts||movie.actor||'';
+  var actor=typeof casts==='string'?casts.split(',').map(function(s){return s.trim();}).filter(Boolean):(Array.isArray(casts)?casts:[]);
+  var dirRaw=movie.director||'';
+  var director=typeof dirRaw==='string'?dirRaw.split(',').map(function(s){return s.trim();}).filter(Boolean):(Array.isArray(dirRaw)?dirRaw:[]);
+  var rawEps=movie.episodes||raw.episodes||[];
+  var episodes=rawEps.map(function(sv){
+    var its=sv.items||sv.server_data||[];
+    return{
+      server_name: sv.server_name||'Server',
+      server_data: its.map(function(e){return{name:e.name||e.slug||'',slug:e.slug||'',link_embed:e.embed||e.link_embed||'',link_m3u8:e.m3u8||e.link_m3u8||''};}),
+    };
+  });
+  return{
+    name: movie.name||'', origin_name: movie.original_name||movie.origin_name||'',
+    slug: movie.slug||slug, content: movie.description||movie.content||'',
+    thumb_url: movie.thumb_url||'', poster_url: movie.poster_url||movie.thumb_url||'',
+    year: movie.publish_year||movie.year||'', quality: movie.quality||'',
+    lang: movie.language||movie.lang||'', episode_current: movie.current_episode||'',
+    time: movie.time||'', actor: actor, director: director, category: category,
+    country: country, episodes: episodes, source: 'nguonc',
+  };
+}
+
+function fetchNguoncDirect(paramsStr){
+  var qp=new URLSearchParams(paramsStr);
+  var o={slug:qp.get('path')||'',keyword:qp.get('keyword')||'',cat:qp.get('cat')||'',
+    nation:qp.get('nation')||'',year:qp.get('year')||'',type:qp.get('type')||'',page:qp.get('page')||'1'};
+  return fetch(nguoncUrl(o),{headers:{'Accept':'application/json'}}).then(function(r){
+    if(!r.ok) throw new Error('http '+r.status);
+    return r.json();
+  }).then(function(raw){
+    if(o.slug){
+      var item=nguoncNormDetail(raw,o.slug);
+      return{status:!!item,source:'nguonc',data:{item:item}};
+    }
+    return{status:true,source:'nguonc',data:{items:nguoncNormList(raw)}};
+  }).catch(function(){
+    // Không gọi được trực tiếp (CORS bị chặn hoặc mạng lỗi) -> trả rỗng,
+    // để giao diện hiện thông báo "chưa có dữ liệu" thay vì vỡ trang.
+    return qp.get('path')?{status:false,source:'nguonc'}:{status:true,source:'nguonc',data:{items:[]}};
+  });
+}
+
+/* Lớp trung gian: mọi nơi gọi API đều đi qua đây. Nếu tham số có
+   source=nguonc thì gọi thẳng trình duyệt -> NguonC; còn lại vẫn đi qua
+   proxy server như bình thường (KKPhim/VSMOV không có vấn đề gì). */
+function apiProxy(paramsStr){
+  if(/(^|&)source=nguonc(&|$)/.test(paramsStr)){
+    return fetchNguoncDirect(paramsStr);
+  }
+  return fetch('/api/proxy?'+paramsStr).then(function(r){return r.json();});
+}
+
 /* Cache nhẹ trong bộ nhớ: lưu lại thông tin (tên, ảnh...) đã có sẵn từ
    danh sách/lưới phim, để khi bấm vào xem chi tiết, modal hiện NGAY LẬP TỨC
    (tên phim + poster) trong lúc chờ tải đầy đủ (mô tả, tập phim...) ở nền —
@@ -528,7 +637,7 @@ function skRow(title){
 
 function addRow(title,params,placeholder){
   var full=(params||'')+'&source='+encodeURIComponent(currentSource);
-  return fetch('/api/proxy?'+full).then(function(r){return r.json();}).then(function(res){
+  return apiProxy(full).then(function(res){
     var items=(res.data&&res.data.items)||[];
     if(!items.length){if(placeholder)placeholder.remove();return;}
     var html='<div class="row-hd"><div class="row-title">'+title+'</div><span class="row-more">Xem thêm &rsaquo;</span></div>'+
@@ -555,14 +664,32 @@ function showFilterPage(title, params, isMultiSource){
     '</div>';
   content.innerHTML=skHtml;
 
-  var full=(params||'')+(isMultiSource?'':'&source='+encodeURIComponent(currentSource));
-  fetch('/api/proxy?'+full).then(function(r){return r.json();}).then(function(res){
-    var items=(res.data&&res.data.items)||[];
+  function render(items){
     if(!items.length){document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Không tìm thấy phim nào. Thử đổi nguồn phim khác ở góc trên bên phải nhé.</p>';return;}
     document.getElementById('filterGrid').innerHTML=items.map(function(m){return cardHtml(m,!!isMultiSource);}).join('');
-  }).catch(function(){
-    document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Có lỗi khi tải dữ liệu, thử lại sau nhé.</p>';
-  });
+  }
+
+  if(isMultiSource){
+    // Tìm đa nguồn: gọi RIÊNG từng nguồn song song rồi gộp — NguonC đi
+    // thẳng qua trình duyệt (apiProxy tự nhận diện), không phụ thuộc vào
+    // backend nữa nên không bị treo/timeout chờ NguonC như trước.
+    Promise.all(['kkphim','vsmov','nguonc'].map(function(s){
+      return apiProxy((params||'')+'&source='+s).catch(function(){return{data:{items:[]}};});
+    })).then(function(resArr){
+      var items=[];
+      resArr.forEach(function(res){items=items.concat((res&&res.data&&res.data.items)||[]);});
+      render(items);
+    }).catch(function(){
+      document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Có lỗi khi tải dữ liệu, thử lại sau nhé.</p>';
+    });
+  } else {
+    var full=(params||'')+'&source='+encodeURIComponent(currentSource);
+    apiProxy(full).then(function(res){
+      render((res.data&&res.data.items)||[]);
+    }).catch(function(){
+      document.getElementById('filterGrid').innerHTML='<p style="color:rgba(255,255,255,.4);grid-column:1/-1;text-align:center;padding:60px 0">Có lỗi khi tải dữ liệu, thử lại sau nhé.</p>';
+    });
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -634,7 +761,7 @@ function loadHome(){
   content.className='rows-wrap';
   content.innerHTML='';
 
-  fetch('/api/proxy?source='+encodeURIComponent(currentSource)).then(function(r){return r.json();}).then(function(res){
+  apiProxy('source='+encodeURIComponent(currentSource)).then(function(res){
     var items=(res.data&&res.data.items)||[];
     if(!items.length){
       content.innerHTML='<p style="color:rgba(255,255,255,.4);text-align:center;padding:80px 0">Nguồn này hiện chưa trả về dữ liệu. Thử đổi sang nguồn khác ở góc trên bên phải nhé.</p>';
@@ -689,7 +816,7 @@ window.showIntro=function(slug,source){
   document.getElementById('iBanner').src=qImg;
   document.getElementById('iPoster').src=qImg;
 
-  fetch('/api/proxy?path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source)).then(function(r){return r.json();}).then(function(r){
+  apiProxy('path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source)).then(function(r){
     active=r.data&&r.data.item;
     if(!active){
       document.getElementById('iTitle').textContent='Không tìm thấy phim này ở nguồn '+(SRC_NAMES[source]||source)+'.';
@@ -773,7 +900,7 @@ window.startPhim=function(){
 function loadRec(){
   var src=active.source||currentSource;
   var cat=(active&&active.category&&active.category[0]&&active.category[0].slug)||'hanh-dong';
-  fetch('/api/proxy?cat='+cat+'&source='+encodeURIComponent(src)).then(function(r){return r.json();}).then(function(r){
+  apiProxy('cat='+cat+'&source='+encodeURIComponent(src)).then(function(r){
     var items=((r.data&&r.data.items)||[]).filter(function(m){return m.slug!==active.slug;}).slice(0,12);
     document.getElementById('tRec').innerHTML=items.map(function(m){
       return '<div class="rc" onclick="swapMovie(\''+m.slug+'\',\''+(m.source||src)+'\')">'+
@@ -788,7 +915,7 @@ function loadRec(){
 
 window.swapMovie=function(slug,source){
   document.getElementById('video').src='';
-  fetch('/api/proxy?path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source||currentSource)).then(function(r){return r.json();}).then(function(r){
+  apiProxy('path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source||currentSource)).then(function(r){
     active=r.data&&r.data.item;if(active){active.source=active.source||source||currentSource;startPhim();}
   });
 };
@@ -824,7 +951,7 @@ document.getElementById('search').addEventListener('keypress',function(e){
   if(e.key==='Enter' && e.target.value.trim()){
     document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
     // Tìm kiếm trên CẢ 3 NGUỒN cùng lúc — kết quả gắn badge nguồn tương ứng
-    showFilterPage('&#128269; Kết quả cho "'+esc(e.target.value)+'" (mọi nguồn)','keyword='+encodeURIComponent(e.target.value)+'&source=all', true);
+    showFilterPage('&#128269; Kết quả cho "'+esc(e.target.value)+'" (mọi nguồn)','keyword='+encodeURIComponent(e.target.value), true);
   }
 });
 
