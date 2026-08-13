@@ -262,9 +262,9 @@ body{background:var(--bg);color:#fff;font-family:'Segoe UI',system-ui,sans-serif
   </div>
   <div class="nav-right">
     <select id="srcSelect" class="src-select" title="Đổi nguồn phim">
-      <option value="kkphim">Nguồn: KAKAPHIM </option>
-      <option value="nguonc">Nguồn: NGUONC</option>
-      <option value="vsmov">Nguồn: VSMUP</option>
+      <option value="kkphim">Nguồn: KKPhim</option>
+      <option value="nguonc">Nguồn: Nguồn C</option>
+      <option value="vsmov">Nguồn: VSMOV</option>
     </select>
     <input type="text" id="search" class="search-box" placeholder="🔍 Tìm kiếm mọi nguồn...">
   </div>
@@ -349,11 +349,12 @@ function buildHero(list){
   var dotsEl=document.getElementById('heroDots');
 
   track.innerHTML=list.map(function(m,i){
+    cacheItem(m);
     var thumb=m.thumb_url||m.poster_url||'';
     var slug=m.slug;
     return '<div class="hero-slide'+(i===0?' cur':'')+'">' +
-      '<img class="hbg" src="'+thumb+'" alt="" '+(i===0?'fetchpriority="high"':'loading="lazy"')+
-        ' onerror="this.style.opacity=0">' +
+      '<img class="hbg" src="'+thumb+'" data-src="'+esc(thumb)+'" data-source="'+(m.source||currentSource)+'" alt="" '+(i===0?'fetchpriority="high"':'loading="lazy"')+
+        ' onerror="imgFallback(this)">' +
       '<div class="hero-ov"></div>' +
       '<div class="hero-info">' +
         '<div class="badges">' +
@@ -477,19 +478,41 @@ function initHeroDrag(){
 ═══════════════════════════════════════ */
 var SRC_NAMES={kkphim:'KKPhim',nguonc:'Nguồn C',vsmov:'VSMOV'};
 
+/* Cache nhẹ trong bộ nhớ: lưu lại thông tin (tên, ảnh...) đã có sẵn từ
+   danh sách/lưới phim, để khi bấm vào xem chi tiết, modal hiện NGAY LẬP TỨC
+   (tên phim + poster) trong lúc chờ tải đầy đủ (mô tả, tập phim...) ở nền —
+   giúp cảm giác mở phim nhanh hơn hẳn thay vì luôn phải chờ "Đang tải...". */
+var movieCache={};
+function cacheItem(m){
+  if(m&&m.slug){movieCache[(m.source||currentSource)+'|'+m.slug]=m;}
+  return m;
+}
+
 function cardHtml(m,showBadge){
+  cacheItem(m);
   var poster=m.poster_url||m.thumb_url||'';
   var src=m.source||currentSource;
   return '<div class="card" tabindex="0" onclick="showIntro(\''+m.slug+'\',\''+src+'\')" onkeypress="if(event.key===\'Enter\')showIntro(\''+m.slug+'\',\''+src+'\')">'+
     '<div class="ciw">'+
       (showBadge?'<div class="src-tag">'+(SRC_NAMES[src]||src)+'</div>':'')+
-      '<img src="'+poster+'" loading="lazy" alt="'+esc(m.name)+'" onerror="this.style.background=\'#1a1a2a\'">'+
+      '<img src="'+poster+'" data-src="'+esc(poster)+'" data-source="'+src+'" loading="lazy" alt="'+esc(m.name)+'" onerror="imgFallback(this)">'+
       (m.episode_current?'<div class="ep-badge">'+m.episode_current+'</div>':'')+
       '<div class="card-ov"><div class="play-ic"><span style="color:#000;font-size:13px;padding-left:2px">&#9654;</span></div></div>'+
     '</div>'+
     '<div class="card-t">'+esc(m.name)+'</div>'+
   '</div>';
 }
+
+/* Ảnh gốc tải trực tiếp lỗi (thường do CDN chặn hotlink vì Referer không
+   khớp) -> thử lại 1 lần qua route /api/img (server tự gắn đúng Referer).
+   Nếu vẫn lỗi thì thôi, tránh lặp vô hạn (data-tried đánh dấu đã thử). */
+window.imgFallback=function(img){
+  if(img.dataset.tried){img.style.opacity='0';img.style.background='#1a1a2a';img.onerror=null;return;}
+  img.dataset.tried='1';
+  var src=img.dataset.src||img.src, source=img.dataset.source||currentSource;
+  if(!src){img.style.opacity='0';img.style.background='#1a1a2a';return;}
+  img.src='/api/img?url='+encodeURIComponent(src)+'&source='+encodeURIComponent(source);
+};
 
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 /* Escape an toàn cho chuỗi chèn bên trong onclick="...('...')" */
@@ -651,21 +674,26 @@ window.showIntro=function(slug,source){
   source=source||currentSource;
   var modal=document.getElementById('intro');
   modal.style.display='flex';
-  // Reset trạng thái loading
-  document.getElementById('iTitle').textContent='Đang tải...';
-  document.getElementById('iOrig').textContent='';
   document.getElementById('iMeta').innerHTML='';
   document.getElementById('iCats').innerHTML='';
-  document.getElementById('iDesc').textContent='';
-  // Xóa ảnh cũ để tránh flicker ảnh cũ
   document.getElementById('iBanner').classList.remove('err');
-  document.getElementById('iBanner').src='';
-  document.getElementById('iPoster').src='';
+
+  // Hiện NGAY thông tin đã có sẵn từ lưới/danh sách (tên, ảnh, năm) trong
+  // lúc chờ tải chi tiết đầy đủ (mô tả, tập phim) ở nền -> cảm giác mở
+  // nhanh hơn hẳn, không phải nhìn "Đang tải..." trống trơn mỗi lần.
+  var quick=movieCache[source+'|'+slug];
+  document.getElementById('iTitle').textContent=quick?quick.name:'Đang tải...';
+  document.getElementById('iOrig').textContent=(quick&&quick.origin_name)||'';
+  document.getElementById('iDesc').textContent=quick?'Đang tải nội dung phim...':'';
+  var qImg=(quick&&(quick.poster_url||quick.thumb_url))||'';
+  document.getElementById('iBanner').src=qImg;
+  document.getElementById('iPoster').src=qImg;
 
   fetch('/api/proxy?path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source)).then(function(r){return r.json();}).then(function(r){
     active=r.data&&r.data.item;
     if(!active){
       document.getElementById('iTitle').textContent='Không tìm thấy phim này ở nguồn '+(SRC_NAMES[source]||source)+'.';
+      document.getElementById('iDesc').textContent='';
       return;
     }
     active.source=active.source||source;
@@ -675,6 +703,7 @@ window.showIntro=function(slug,source){
     var poster  = active.poster_url || active.thumb_url || '';
 
     // Preload banner trước để check lỗi
+    var src=active.source||source;
     if(banner){
       var img=new Image();
       img.onload=function(){
@@ -682,12 +711,18 @@ window.showIntro=function(slug,source){
         document.getElementById('iBanner').src=banner;
       };
       img.onerror=function(){
-        // fallback dùng luôn poster làm banner
-        document.getElementById('iBanner').src=poster;
+        // Thử lại qua /api/img (gắn đúng Referer, hay gặp với KKPhim bị chặn hotlink)
+        var img2=new Image();
+        img2.onload=function(){document.getElementById('iBanner').src=img2.src;};
+        img2.onerror=function(){document.getElementById('iBanner').src=poster;}; // hết cách, dùng poster thay
+        img2.src='/api/img?url='+encodeURIComponent(banner)+'&source='+encodeURIComponent(src);
       };
       img.src=banner;
     }
     document.getElementById('iPoster').src=poster;
+    document.getElementById('iPoster').setAttribute('data-src',poster);
+    document.getElementById('iPoster').setAttribute('data-source',src);
+    document.getElementById('iPoster').onerror=function(){imgFallback(this);};
 
     document.getElementById('iTitle').textContent=active.name;
     document.getElementById('iOrig').textContent=active.origin_name||'';
