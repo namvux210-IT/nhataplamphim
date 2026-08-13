@@ -60,7 +60,7 @@ HEADERS_BASE = {
                   "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Encoding": "gzip, deflate",
     "Connection": "keep-alive",
     "Sec-Fetch-Dest": "empty",
     "Sec-Fetch-Mode": "cors",
@@ -90,19 +90,22 @@ _session.mount("http://", HTTPAdapter(max_retries=_retry, pool_maxsize=20))
 # cookie, dùng chung Session (giữ cookie) cho các lần gọi API kế tiếp
 # trong cùng lượt khởi động serverless function.
 _nguonc_warmed = False
+_nguonc_warm_status = None
 
 
 def warm_nguonc():
-    global _nguonc_warmed
+    global _nguonc_warmed, _nguonc_warm_status
     if _nguonc_warmed:
-        return
+        return _nguonc_warm_status
     try:
         h = dict(HEADERS_BASE)
         h["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-        _session.get("https://phim.nguonc.com/", headers=h, timeout=TIMEOUT)
-    except Exception:
-        pass
+        r = _session.get("https://phim.nguonc.com/", headers=h, timeout=TIMEOUT)
+        _nguonc_warm_status = r.status_code
+    except Exception as e:
+        _nguonc_warm_status = "error: " + str(e)[:100]
     _nguonc_warmed = True
+    return _nguonc_warm_status
 
 
 
@@ -492,14 +495,22 @@ def handle():
         for s in SOURCES:
             info = {"url": url_home(s, "1")}
             if s == "nguonc":
-                warm_nguonc()
-                info["warmed_session"] = True
+                info["homepage_status"] = warm_nguonc()
             try:
                 headers = dict(HEADERS_BASE)
                 if REFERER.get(s):
                     headers["Referer"] = REFERER[s]
                 r = _session.get(info["url"], headers=headers, timeout=TIMEOUT)
                 info["http_status"] = r.status_code
+                # Lấy các header hay dùng để nhận diện WAF/CDN đang chặn
+                # (Cloudflare, Sucuri, Nginx tùy biến...) — giúp biết chính
+                # xác cần vượt qua cơ chế nào.
+                waf_headers = {}
+                for hk in ["server", "cf-ray", "cf-mitigated", "x-sucuri-id",
+                           "x-waf-event-info", "content-type", "content-encoding"]:
+                    if hk in r.headers:
+                        waf_headers[hk] = r.headers[hk]
+                info["response_headers"] = waf_headers
                 try:
                     j = r.json()
                     info["json_ok"] = True
@@ -508,7 +519,7 @@ def handle():
                     info["json_ok"] = False
                     info["items_found"] = 0
                     info["parse_error"] = str(pe)
-                    info["body_preview"] = r.text[:200]
+                    info["body_preview"] = r.text[:300]
             except requests.exceptions.Timeout:
                 info["error"] = "TIMEOUT sau " + str(TIMEOUT) + "s — nguồn phản hồi quá chậm hoặc chặn request."
             except requests.exceptions.ConnectionError as ce:
