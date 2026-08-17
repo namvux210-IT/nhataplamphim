@@ -65,15 +65,17 @@
       </button>
       <input type="text" id="searchBox" class="search-box" placeholder="Tìm phim ở mọi nguồn...">
     </div>
-    <button class="src-pill" id="srcPill">
-      <span class="dot"></span><span id="srcPillLabel">KKPhim</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    <div class="src-pill-wrap">
+      <button class="src-pill" id="srcPill">
+        <span class="dot"></span><span class="pill-label" id="srcPillLabel">KKPhim</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
       <div class="src-menu" id="srcMenu">
         <button class="src-opt on" data-src="kkphim">KKPhim</button>
         <button class="src-opt" data-src="nguonc">Nguồn C</button>
         <button class="src-opt" data-src="vsmov">VSMOV</button>
       </div>
-    </button>
+    </div>
     <button class="hamburger" id="hamburger" aria-label="Menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
@@ -206,7 +208,7 @@ function buildHero(list){
 
   function renderContent(i){
     var m=list[i], src=m.source||currentSource;
-    var href='xem-phim.html?slug='+encodeURIComponent(m.slug)+'&source='+encodeURIComponent(src);
+    var href='phim.html?slug='+encodeURIComponent(m.slug)+'&source='+encodeURIComponent(src);
     content.innerHTML=
       '<div class="hero-eyebrow">Đang chiếu</div>'+
       '<h1 class="hero-title">'+esc(m.name)+'</h1>'+
@@ -219,7 +221,7 @@ function buildHero(list){
       '</div>'+
       (m.content?'<p class="hero-desc">'+esc(m.content.replace(/<[^>]*>/g,''))+'</p>':'')+
       '<div class="hero-btns">'+
-        '<a class="btn btn-gold" href="'+href+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6.5v11l9-5.5-9-5.5z"/></svg>Xem ngay</a>'+
+        '<a class="btn btn-gold" href="'+href+'"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6.5v11l9-5.5-9-5.5z"/></svg>Xem chi tiết</a>'+
       '</div>';
   }
   renderContent(0);
