@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đang tải... — KhoPhimChat</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="info">
+
+<div class="watch-topbar">
+  <a href="index.html" class="watch-back" id="backBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    <span class="visually-hidden">Về trang chủ</span>
+  </a>
+  <div class="watch-title" id="watchTitle">Đang tải...</div>
+  <div class="watch-src" id="watchSrc">—</div>
+</div>
+
+<div class="info-hero">
+  <img id="infoBackdrop" src="" alt="" onerror="this.style.opacity=0">
+  <div class="info-hero-fade"></div>
+</div>
+
+<div class="info-wrap">
+  <div class="info-poster sk" id="moviePoster"></div>
+  <div class="info-col">
+    <h1 class="movie-title sk-title" id="mTitle" style="width:60%;height:24px;border-radius:6px">&nbsp;</h1>
+    <p class="movie-orig" id="mOrig"></p>
+    <div class="ticket movie-ticket" id="mTicket"></div>
+    <div class="chip-row" id="mChips"></div>
+    <p class="movie-desc clamp" id="mDesc"></p>
+    <button class="desc-toggle" id="descToggle" style="display:none">Xem thêm</button>
+    <div class="crew-row" id="mCrew"></div>
+    <div class="info-cta">
+      <a class="btn btn-gold" href="#" id="watchBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6.5v11l9-5.5-9-5.5z"/></svg>
+        Xem phim
+      </a>
+    </div>
+  </div>
+</div>
+
+<section class="section watch-related">
+  <div class="section-hd">
+    <div><div class="section-eyebrow">Gợi ý</div><div class="section-title">Có thể bạn cũng thích</div></div>
+  </div>
+  <div class="row-scroll" id="relatedRow">
+    <div class="card sk-card"><div class="card-img sk"></div></div>
+    <div class="card sk-card"><div class="card-img sk"></div></div>
+    <div class="card sk-card"><div class="card-img sk"></div></div>
+    <div class="card sk-card"><div class="card-img sk"></div></div>
+    <div class="card sk-card"><div class="card-img sk"></div></div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-row">
+    <a href="index.html" class="logo" style="font-size:16px">
+      <span class="mark" style="width:22px;height:22px"><svg viewBox="0 0 24 24"><path d="M9 6.5v11l9-5.5-9-5.5z" fill="currentColor"/></svg></span>
+      <b>Kho</b><span>PhimChat</span>
+    </a>
+    <p class="footer-note">KhoPhimChat tổng hợp liên kết phim từ nhiều nguồn công khai, không lưu trữ file phim trên máy chủ.</p>
+  </div>
+</footer>
+
+<script src="assets/app.js"></script>
+<script>
+var qp=new URLSearchParams(location.search);
+var slug=qp.get('slug')||'', source=qp.get('source')||currentSource;
+var active=null;
+
+if(!slug){
+  document.body.innerHTML='<div style="padding:80px 20px;text-align:center;color:var(--ink-faint)">Thiếu thông tin phim. <a href="index.html" style="color:var(--gold)">Về trang chủ</a></div>';
+  throw new Error('missing slug');
+}
+
+qs('#watchSrc').textContent=SRC_NAMES[source]||source;
+qs('#watchBtn').href='xem-phim.html?slug='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source);
+
+/* Hiện tạm dữ liệu đã cache từ trang trước (nếu có) để cảm giác nhanh hơn */
+(function showQuick(){
+  var q=getQuickCache(source,slug);
+  if(!q) return;
+  qs('#watchTitle').textContent=q.name;
+  document.title=q.name+' — KhoPhimChat';
+  var mTitle=qs('#mTitle');mTitle.textContent=q.name;mTitle.classList.remove('sk-title');mTitle.style.cssText='';
+  if(q.origin_name) qs('#mOrig').textContent=q.origin_name;
+  var img=q.poster_url||q.thumb_url||'';
+  if(img){
+    qs('#moviePoster').classList.remove('sk');
+    qs('#moviePoster').innerHTML='<img src="'+img+'" data-src="'+esc(img)+'" data-source="'+source+'" alt="" onerror="imgFallback(this)">';
+    qs('#infoBackdrop').src=img;
+  }
+})();
+
+function renderInfo(){
+  document.title=active.name+' — KhoPhimChat';
+  qs('#watchTitle').textContent=active.name;
+  var mTitle=qs('#mTitle');mTitle.textContent=active.name;mTitle.classList.remove('sk-title');mTitle.style.cssText='';
+  qs('#mOrig').textContent=active.origin_name||'';
+  qs('#mTicket').innerHTML=ticketHtml(active,source);
+  qs('#mChips').innerHTML=chipsHtml(active);
+
+  var desc=(active.content||'').replace(/<[^>]*>/g,'').trim();
+  var descEl=qs('#mDesc');
+  descEl.textContent=desc||'Chưa có mô tả cho phim này.';
+  var toggle=qs('#descToggle');
+  if(desc.length>220){
+    toggle.style.display='inline-block';
+    toggle.onclick=function(){
+      descEl.classList.toggle('clamp');
+      toggle.textContent=descEl.classList.contains('clamp')?'Xem thêm':'Thu gọn';
+    };
+  }
+  qs('#mCrew').innerHTML=crewHtml(active);
+
+  var backdrop=active.thumb_url||active.poster_url||'';
+  var poster=active.poster_url||active.thumb_url||'';
+  if(backdrop) qs('#infoBackdrop').src=backdrop;
+  var posterEl=qs('#moviePoster');
+  posterEl.classList.remove('sk');
+  posterEl.innerHTML=poster?'<img src="'+poster+'" data-src="'+esc(poster)+'" data-source="'+source+'" alt="" onerror="imgFallback(this)">':'';
+
+  var hasPlayable=active.episodes&&active.episodes.some(function(s){return s.server_data&&s.server_data.length;});
+  if(!hasPlayable){
+    qs('#watchBtn').classList.add('btn-ghost');
+    qs('#watchBtn').classList.remove('btn-gold');
+    qs('#watchBtn').lastChild.textContent=' Chưa có tập phát';
+  }
+}
+
+apiProxy('path='+encodeURIComponent(slug)+'&source='+encodeURIComponent(source)).then(function(r){
+  active=r.data&&r.data.item;
+  if(!active){
+    qs('#watchTitle').textContent='Không tìm thấy phim';
+    qs('#mTitle').textContent='Không tìm thấy phim này ở nguồn '+(SRC_NAMES[source]||source)+'.';
+    qs('#mTitle').classList.remove('sk-title');qs('#mTitle').style.cssText='';
+    qs('#watchBtn').style.display='none';
+    qs('.watch-related').style.display='none';
+    return;
+  }
+  active.source=active.source||source;
+  renderInfo();
+  loadRelatedMovies(active,source,slug,'#relatedRow','.watch-related');
+}).catch(function(){
+  qs('#watchTitle').textContent='Lỗi tải dữ liệu';
+  qs('.watch-related').style.display='none';
+});
+</script>
+</body>
+</html>
