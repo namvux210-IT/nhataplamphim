@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   KHOPHIMCHAT — LÕI DÙNG CHUNG (index.html + xem-phim.html)
+   KHOPHIMCHAT — LÕI DÙNG CHUNG (index.html + phim.html + xem-phim.html)
    Toàn bộ phần gọi API / chuẩn hóa dữ liệu / render card đặt ở đây để 2
    trang không lặp code. Trang nào cần logic riêng (hero, player...) thì
    viết thêm trong <script> riêng của trang đó, dùng lại các hàm ở file này.
@@ -123,7 +123,7 @@ function apiProxy(paramsStr){
 /* ═══════════════════════════════════════════════════════════════════════
    CACHE NHẸ TRONG BỘ NHỚ — hiện dữ liệu tức thì khi chuyển trang
    Lưu lại info phim (tên, ảnh...) mỗi khi card được render, đồng thời ghi
-   vào sessionStorage để trang xem-phim.html (điều hướng thật, không phải
+   vào sessionStorage để trang phim.html (điều hướng thật, không phải
    modal) đọc lại ngay lập tức trong lúc chờ tải chi tiết đầy đủ.
 ═══════════════════════════════════════════════════════════════════════ */
 function cacheItem(m){
@@ -156,7 +156,7 @@ function cardHtml(m,showSrcBadge){
   cacheItem(m);
   var poster=m.poster_url||m.thumb_url||'';
   var src=m.source||currentSource;
-  var href='xem-phim.html?slug='+encodeURIComponent(m.slug)+'&source='+encodeURIComponent(src);
+  var href='phim.html?slug='+encodeURIComponent(m.slug)+'&source='+encodeURIComponent(src);
   return '<a class="card" href="'+href+'" data-slug="'+esc(m.slug)+'" data-source="'+src+'">'+
     '<div class="card-img">'+
       (showSrcBadge?'<div class="card-src">'+(SRC_NAMES[src]||src)+'</div>':'')+
@@ -237,4 +237,44 @@ function initMobileMenu(){
   var burger=qs('#hamburger'), menu=qs('#mobileMenu');
   if(!burger||!menu) return;
   burger.addEventListener('click',function(){menu.classList.toggle('open');});
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PHIM LIÊN QUAN — dùng chung cho phim.html (trang thông tin) và
+   xem-phim.html (trang player), tránh lặp code fetch/render 2 nơi.
+═══════════════════════════════════════════════════════════════════════ */
+function loadRelatedMovies(active, source, slug, rowSelector, sectionSelector){
+  var cat=(active.category&&active.category[0]&&active.category[0].slug)||(active.country&&active.country[0]&&active.country[0].slug);
+  var params=cat?('cat='+cat):'';
+  return apiProxy(params+'&source='+encodeURIComponent(source)).then(function(res){
+    var items=((res.data&&res.data.items)||[]).filter(function(m){return m.slug!==slug;}).slice(0,12);
+    var sectionEl=qs(sectionSelector);
+    if(!items.length){if(sectionEl)sectionEl.style.display='none';return;}
+    qs(rowSelector).innerHTML=items.map(function(m){return cardHtml(m,false);}).join('');
+  }).catch(function(){var sectionEl=qs(sectionSelector);if(sectionEl)sectionEl.style.display='none';});
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TICKET/CHIP/CREW HTML — dùng chung cho phim.html và xem-phim.html
+═══════════════════════════════════════════════════════════════════════ */
+function ticketHtml(active, source){
+  var t='';
+  if(active.quality) t+='<span class="tk gold">'+esc(active.quality)+'</span>';
+  if(active.year) t+='<span class="tk">'+esc(active.year)+'</span>';
+  if(active.episode_current) t+='<span class="tk teal">'+esc(active.episode_current)+'</span>';
+  if(active.lang) t+='<span class="tk">'+esc(active.lang)+'</span>';
+  t+='<span class="tk">'+(SRC_NAMES[source]||source)+'</span>';
+  return t;
+}
+function chipsHtml(active){
+  var c='';
+  (active.category||[]).forEach(function(x){c+='<span class="chip">'+esc(x.name)+'</span>';});
+  (active.country||[]).forEach(function(x){c+='<span class="chip">'+esc(x.name)+'</span>';});
+  return c;
+}
+function crewHtml(active){
+  var c='';
+  if(active.director&&active.director.length) c+='<div class="crew-block"><b>Đạo diễn</b><span>'+esc(active.director.join(', '))+'</span></div>';
+  if(active.actor&&active.actor.length) c+='<div class="crew-block"><b>Diễn viên</b><span>'+esc(active.actor.slice(0,10).join(', '))+'</span></div>';
+  return c;
 }
